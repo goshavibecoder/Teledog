@@ -32,7 +32,7 @@ loadRoom(g=>{
  room=g.scene;scene.add(room);mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  room.traverse(o=>{if(o.isMesh){o.frustumCulled=true;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m.name.startsWith('Hologram')){m.transparent=true;m.depthWrite=false;}if(/glass|display window/i.test(m.name)){m.transparent=true;m.depthWrite=false;}}}});
- enter.disabled=false;enter.innerHTML='Войти в комнату <span>↗</span>';status.textContent='Покрути комнату или отправляйся на прогулку.';
+ entered=true;document.body.classList.add('entered');overview();
  window.teledog={room,mixer,camera,controls,setWalk,logoLink};
 },e=>{if(e.total){progress.textContent=Math.min(99,Math.round(e.loaded/e.total*100))+'%';}},e=>{console.error('Room loading failed',e);status.textContent='Комната не загрузилась. Проверь соединение и попробуй ещё раз.';enter.textContent='Повторить загрузку';enter.disabled=false;enter.onclick=()=>location.reload();});
 function overview(){walk=false;controls.enabled=true;camera.position.set(4.5,3.4,6.0);controls.target.set(-.2,.98,0);controls.update();$('#joystick').hidden=true;$('#move-buttons').hidden=true;$('#overview').classList.add('active');$('#walk').classList.remove('active');$('#mode-label').textContent='3D SHOWROOM';keys.clear();stickVector={forward:0,right:0};}
