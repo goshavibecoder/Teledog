@@ -2,3 +2,5 @@
 
 /* Show only the interactive room, from the first frame. */
 body > :not(#scene){display:none!important}
+
+#scene canvas{filter:saturate(1.08) contrast(1.04)}
