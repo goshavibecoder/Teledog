@@ -22,7 +22,7 @@ function loadRoom(onLoad,onProgress,onError){
  let loaded=0;
  Promise.all(['./assets/room.glb.part1','./assets/room.glb.part2'].map(async url=>{
   const response=await fetch(url);if(!response.ok)throw new Error(`Room asset: ${response.status}`);
-  const bytes=new Uint8Array(await response.arrayBuffer());loaded+=bytes.length;onProgress({loaded,total:16582624});return bytes;
+  const bytes=new Uint8Array(await response.arrayBuffer());loaded+=bytes.length;onProgress({loaded,total:15099676});return bytes;
  })).then(parts=>{
   const bytes=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let offset=0;
   for(const part of parts){bytes.set(part,offset);offset+=part.length;}
