@@ -1,5 +1,4 @@
 node_modules/
-.DS_Store
-__pycache__/
-*.pyc
-public/
+assets/*.blend*
+build.log
+build_web_room.py

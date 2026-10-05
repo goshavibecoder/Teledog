@@ -1,0 +1,34 @@
+name: Deploy TELEDOG website
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Prepare static files
+        run: |
+          mkdir -p public
+          cp index.html style.css app.js navigation.js public/
+          cp -r vendor public/vendor
+          mkdir -p public/assets
+          cp assets/room.glb.part1 assets/room.glb.part2 assets/room-poster.png public/assets/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
