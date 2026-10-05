@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
+import {addXLogo} from './x-logo.js';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -29,7 +30,7 @@ function loadRoom(onLoad,onProgress,onError){
  }).catch(onError);
 }
 loadRoom(g=>{
- room=g.scene;scene.add(room);mixer=new THREE.AnimationMixer(room);
+ room=g.scene;scene.add(room);addXLogo(room);mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  room.traverse(o=>{if(o.isMesh){o.frustumCulled=true;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m.name.startsWith('Hologram')){m.transparent=true;m.depthWrite=false;}if(/glass|display window/i.test(m.name)){m.transparent=true;m.depthWrite=false;}}}});
  entered=true;document.body.classList.add('entered');overview();
