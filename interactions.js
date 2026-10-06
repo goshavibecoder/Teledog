@@ -1,16 +1,19 @@
 import * as THREE from './vendor/build/three.module.js';
 
+const sourceName=o=>o.userData.name||o.name.replaceAll('_',' ');
+
 export function registerItems(room){
  const items=[];
  const add=(object,label)=>{object.userData.pickup={label};items.push(object);};
  const objects=[];room.traverse(o=>objects.push(o));
  for(const o of objects){
-  if(o.name==='Compact keyboard')add(o,'Клавиатура');
-  else if(/^Shelf Teledog \d+ .*Character turntable/.test(o.name))add(o,'Игрушка');
-  else if(/^Packaged shelf toy \d+ .*Character turntab/.test(o.name))add(o,'Игрушка');
-  else if(o.name==='Counter mascot Display 1-1 Character turntable')add(o,'Игрушка');
+  const name=sourceName(o);
+  if(name==='Compact keyboard')add(o,'Клавиатура');
+  else if(/^Shelf Teledog \d+ .*Character turntable/.test(name))add(o,'Игрушка');
+  else if(/^Packaged shelf toy \d+ .*Character turntab/.test(name))add(o,'Игрушка');
+  else if(name==='Counter mascot Display 1-1 Character turntable')add(o,'Игрушка');
  }
- const monitorParts=objects.filter(o=>/^Desktop monitor (foot|frame|stem)$/.test(o.name)||o.name==='TELEDOG chart computer screen');
+ const monitorParts=objects.filter(o=>/^Desktop monitor (foot|frame|stem)$/.test(sourceName(o))||sourceName(o)==='TELEDOG chart computer screen');
  if(monitorParts.length){
   const monitor=new THREE.Group();monitor.name='Interactive monitor';room.add(monitor);room.updateMatrixWorld(true);
   monitorParts.forEach(o=>monitor.attach(o));add(monitor,'Монитор');
@@ -55,7 +58,7 @@ export class HandInteraction{
   item.traverse(o=>{if(!o.isMesh)return;saved.materials.push({o,material:o.material,order:o.renderOrder});
    const clone=m=>{const c=m.clone();c.depthTest=false;return c;};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);o.renderOrder=1001;
   });
-  if(item.userData.pickup.label==='Монитор')this.scene.traverse(o=>{if(o.name==='Monitor connected cable'){saved.hidden.push({o,visible:o.visible});o.visible=false;}});
+  if(item.userData.pickup.label==='Монитор')this.scene.traverse(o=>{if(sourceName(o)==='Monitor connected cable'){saved.hidden.push({o,visible:o.visible});o.visible=false;}});
   saved.holder=holder;this.held=saved;this.rig.visible=true;this.onChange(item.userData.pickup.label);return true;
  }
  release(){

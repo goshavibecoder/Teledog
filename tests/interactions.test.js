@@ -9,7 +9,7 @@ function fixture(){
  const bytes=fs.readFileSync(new URL('../assets/room.glb',import.meta.url));
  const doc=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)));
  const nodes=doc.nodes.map(n=>{
-  const o=new THREE.Group();o.name=n.name||'';
+  const o=new THREE.Group();o.name=THREE.PropertyBinding.sanitizeNodeName(n.name||'');o.userData.name=n.name||'';
   if(n.mesh!==undefined)for(const primitive of doc.meshes[n.mesh].primitives){
    const a=doc.accessors[primitive.attributes.POSITION];const min=new THREE.Vector3(...a.min),max=new THREE.Vector3(...a.max),size=max.clone().sub(min),center=max.clone().add(min).multiplyScalar(.5);
    const geo=new THREE.BoxGeometry(size.x,size.y,size.z);geo.translate(center.x,center.y,center.z);
@@ -23,11 +23,11 @@ function fixture(){
  const scene=new THREE.Scene();scene.add(room);const camera=new THREE.PerspectiveCamera(55,1,.035,40);camera.position.set(-.72,1.3,1.03);scene.add(camera);scene.updateMatrixWorld(true);
  return {scene,room,camera,items:registerItems(room)};
 }
-test('actual room contains complete keyboard, monitor and toys; waving dog is excluded',()=>{
+test('loader-sanitized room names register keyboard, complete monitor and toys',()=>{
  const {items}=fixture();assert.ok(items.length>=17);
  assert.equal(items.filter(i=>i.userData.pickup.label==='Монитор').length,1);
  assert.equal(items.find(i=>i.userData.pickup.label==='Монитор').children.length,4);
- assert.ok(items.some(i=>i.name==='Compact keyboard'));assert.ok(items.some(i=>i.name.startsWith('Shelf Teledog')));
+ assert.ok(items.some(i=>i.userData.name==='Compact keyboard'));assert.ok(items.some(i=>i.userData.name?.startsWith('Shelf Teledog')));
  assert.ok(!items.some(i=>/Large seated|greeting|hologram/i.test(i.name)));
 });
 test('every item fits in hands, follows the camera, and returns without transform or material changes',()=>{
