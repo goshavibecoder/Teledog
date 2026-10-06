@@ -11,7 +11,7 @@ import {addSpeaker} from './speaker.js?v=repair16';
 import {createSpeakerPlayer} from './speaker-player.js?v=repair16';
 import {fixRoomVisuals} from './visual-fixes.js?v=repair16';
 import {registerItems,HandInteraction} from './interactions.js?v=stories32';
-import {registerGalleryStories,galleryCharacterAt,GalleryStories} from './gallery-stories.js?v=stories34';
+import {registerGalleryStories,galleryCharacterAt,GalleryStories} from './gallery-stories.js?v=stories35';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;

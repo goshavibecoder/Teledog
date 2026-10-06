@@ -8,7 +8,9 @@ export const CHARACTERS=Object.freeze({
   'Fastest meme on the fastest chain — powered by TON.'
  ]},
  groyper:{id:'groyper',name:'GROYPER',paragraphs:[]},
- clown:{id:'clown',name:'Rainbow Clown',paragraphs:[]},
+ clown:{id:'clown',name:'HONKLER',image:'./assets/honkler-character.png',paragraphs:[
+  'Honkler is a rainbow-wigged clown Pepe that embodies internet absurdity and satire. Unbothered by the nonsense around him, he just honks his way through Clown World.'
+ ]},
  teledog:{id:'teledog',name:'TELEDOG',paragraphs:[]},
  collectible:{id:'collectible',name:'Collectible',paragraphs:[]}
 });
