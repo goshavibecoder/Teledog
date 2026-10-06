@@ -18,3 +18,10 @@ test('branded speaker sits fully on the desk and can be picked up and returned',
  assert.ok(Math.max(...new THREE.Box3().setFromObject(speaker).getSize(new THREE.Vector3()).toArray())<=.331);
  hands.release();scene.updateMatrixWorld(true);assert.equal(speaker.parent,room);speaker.matrixWorld.elements.forEach((v,i)=>assert.ok(Math.abs(v-before.elements[i])<1e-6));
 });
+
+test('all six raised physical controls can be hit independently from above',()=>{
+ const room=new THREE.Group();const speaker=addSpeaker(room);room.updateMatrixWorld(true);
+ const buttons=speaker.children.filter(o=>o.userData.speakerAction);assert.equal(buttons.length,6);
+ assert.deepEqual(new Set(buttons.map(o=>o.userData.speakerAction)),new Set(['power','previous','next','quieter','toggle','louder']));
+ for(const button of buttons){const center=button.getWorldPosition(new THREE.Vector3());const ray=new THREE.Raycaster(center.clone().add(new THREE.Vector3(0,.1,0)),new THREE.Vector3(0,-1,0));const hit=ray.intersectObject(speaker,true)[0];assert.ok(hit);let control=hit.object;while(control&&!control.userData.speakerAction)control=control.parent;assert.equal(control,button);assert.ok(hit.point.y>speaker.position.y+.281);}
+});

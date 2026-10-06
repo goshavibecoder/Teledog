@@ -5,13 +5,6 @@ export const SPEAKER_TRACKS=[
  {title:'Эх ВПНы Верные',url:'./assets/faithful-vpns.mp3'}
 ];
 
-export function speakerActionAt(uv){
- const x=uv.x*640,y=(1-uv.y)*320;
- if(y<180)return 'toggle';
- if(y<250)return x<213?'previous':x<427?'toggle':'next';
- return x<160?'quieter':x<320?'louder':'pickup';
-}
-
 export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  const display=speaker.getObjectByName('Speaker mini screen');
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=320;
@@ -26,10 +19,13 @@ export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
   gain=audioContext.createGain();gain.gain.value=volume;analyser.connect(gain);gain.connect(audioContext.destination);
  }
  // A GainNode works on iPad, where media-element volume can be fixed by Safari.
- let gain,volume=.7;audio.volume=1;
+ let gain,volume=.7,powered=true;audio.volume=1;const presses=new Map();
  async function start(){try{initialiseAudio();const resume=audioContext.resume(),playback=audio.play();await Promise.all([resume,playback]);error='';}catch(e){error='Tap Play to retry';}elapsed=1;}
  async function select(offset){audio.pause();index=(index+offset+SPEAKER_TRACKS.length)%SPEAKER_TRACKS.length;audio.src=SPEAKER_TRACKS[index].url;error='';elapsed=1;await start();}
- async function act(action){
+ async function act(action,button){
+  if(button){const previous=presses.get(button);const restY=previous?.restY??button.position.y;button.position.y=restY-.002;presses.set(button,{restY,remaining:.16});}
+  if(action==='power'){powered=!powered;if(!powered)audio.pause();elapsed=1;return;}
+  if(!powered&&action!=='pickup')return;
   if(action==='pickup'){onPickup();return;}
   if(action==='next'||action==='previous'){await select(action==='next'?1:-1);return;}
   if(action==='louder'||action==='quieter'){volume=Math.max(0,Math.min(1,Math.round((volume+(action==='louder'?.1:-.1))*10)/10));if(gain)gain.gain.value=volume;elapsed=1;return;}
@@ -37,20 +33,20 @@ export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  }
  audio.addEventListener('error',()=>{error='Audio unavailable';elapsed=1;});
  for(const event of ['play','pause','loadedmetadata'])audio.addEventListener(event,()=>{elapsed=1;});
- audio.addEventListener('ended',()=>select(1));
+ audio.addEventListener('ended',()=>{if(powered)select(1);});
  function time(seconds){if(!Number.isFinite(seconds))return '0:00';return Math.floor(seconds/60)+':'+String(Math.floor(seconds%60)).padStart(2,'0');}
  function update(dt){
+  for(const [button,press] of presses){press.remaining-=dt;if(press.remaining<=0){button.position.y=press.restY;presses.delete(button);}}
   elapsed+=dt;if(elapsed<.08)return;elapsed=0;
   const active=!audio.paused&&!audio.ended;if(analyser)analyser.getByteFrequencyData(data);
-  context.fillStyle='#071727';context.fillRect(0,0,640,320);
+  context.fillStyle=powered?'#071727':'#02060a';context.fillRect(0,0,640,320);
+  if(!powered){texture.needsUpdate=true;return;}
   context.fillStyle='#78cfff';context.font='bold 22px Arial';context.fillText(error||'TELEDOG MUSIC',20,27);
   context.fillStyle='#ffffff';context.font='bold 28px Arial';context.fillText(SPEAKER_TRACKS[index].title,20,62);
   for(let i=0;i<24;i++){const amplitude=active&&data?data[1+i*2]/255:0,height=4+amplitude*57;context.fillStyle='#6bdfff';context.fillRect(27+i*24,134-height,14,height);}
   context.fillStyle='#23435f';context.fillRect(26,148,588,4);context.fillStyle='#72d5ff';const ratio=Number.isFinite(audio.duration)&&audio.duration>0?audio.currentTime/audio.duration:0;context.fillRect(26,148,588*ratio,4);
   context.font='20px Arial';context.fillStyle='#bbd9f0';context.fillText(time(audio.currentTime)+' / '+time(audio.duration),26,176);
-  function button(x,y,w,h,label){context.fillStyle='#163b5c';context.fillRect(x+4,y+4,w-8,h-8);context.fillStyle='#ffffff';context.font='bold 28px Arial';context.textAlign='center';context.fillText(label,x+w/2,y+h/2+10);context.textAlign='left';}
-  button(0,180,213,70,'◀◀');button(213,180,214,70,active?'Ⅱ':'▶');button(427,180,213,70,'▶▶');
-  button(0,250,160,70,'−');button(160,250,160,70,'+');button(320,250,320,70,'HOLD · '+Math.round(volume*100)+'%');
+  context.font='24px Arial';context.fillStyle='#78cfff';context.fillText((active?'PLAYING':'PAUSED')+' · VOL '+Math.round(volume*100)+'%',26,260);
   texture.needsUpdate=true;
  }
  update(1);return {act,update};

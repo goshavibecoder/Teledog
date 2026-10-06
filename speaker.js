@@ -32,6 +32,19 @@ export function addSpeaker(room){
  // Reuse the room's original mascot texture, preserving its exact artwork.
  let characterMap;room.traverse(o=>{if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];for(const m of materials)if(/TELEDOG transparent cutout/i.test(m.name)&&m.map)characterMap=m.map;}});
  if(characterMap){const decal=mesh(new THREE.PlaneGeometry(.117,.1755),new THREE.MeshBasicMaterial({map:characterMap,alphaTest:.03,side:THREE.DoubleSide}),0,.154,-.057,'TELEDOG rear mascot');decal.rotation.y=Math.PI;}
- const button=mesh(new THREE.CylinderGeometry(.009,.009,.003,16),blue,.039,.283,0,'Pickup button');button.userData.speakerAction='pickup';
+ // Raised rubber controls with solid 3D symbols on the top panel.
+ const rubber=new THREE.MeshStandardMaterial({color:0x172635,roughness:.95});
+ const controls=[['power',-.043,-.023],['previous',0,-.023],['next',.043,-.023],['quieter',-.043,.023],['toggle',0,.023],['louder',.043,.023]];
+ for(const [action,x,z] of controls){
+  const button=new THREE.Group();button.name='Speaker '+action+' button';button.position.set(x,.283,z);button.userData.speakerAction=action;speaker.add(button);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.014,.015,.006,24),rubber);button.add(cap);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.015,.0012,6,24),blue);rim.rotation.x=-Math.PI/2;rim.position.y=-.002;button.add(rim);
+  function bar(x,z,w,d){const mark=new THREE.Mesh(new THREE.BoxGeometry(w,.0007,d),white);mark.position.set(x,.0037,z);button.add(mark);}
+  function triangle(cx,reverse=false){const shape=new THREE.Shape();const sign=reverse?-1:1;shape.moveTo(cx-sign*.003,-.005);shape.lineTo(cx+sign*.004,0);shape.lineTo(cx-sign*.003,.005);shape.closePath();const mark=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.0006,bevelEnabled:false}),white);mark.rotation.x=-Math.PI/2;mark.position.y=.0032;button.add(mark);}
+  if(action==='power'){const arc=new THREE.Mesh(new THREE.TorusGeometry(.006,.0008,6,28,Math.PI*1.6),white);arc.rotation.set(-Math.PI/2,0,Math.PI*.7);arc.position.y=.0037;button.add(arc);bar(0,-.004,.0014,.008);}
+  else if(action==='toggle'){triangle(-.003);bar(.004,-.001,.0013,.008);bar(.007,-.001,.0013,.008);}
+  else if(action==='previous'||action==='next'){triangle(0,action==='previous');bar(action==='previous'?-.006:.006,0,.0013,.010);}
+  else {bar(0,0,.012,.0018);if(action==='louder')bar(0,0,.0018,.012);}
+ }
  room.add(speaker);return speaker;
 }
