@@ -4,7 +4,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {registerItems,HandInteraction} from './interactions.js?v=tap4';
+import {registerItems,HandInteraction} from './interactions.js?v=tap5';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -47,8 +47,6 @@ $('#overview').onclick=overview;$('#walk').onclick=setWalk;$('#wave').onclick=()
 $('#help-toggle').onclick=()=>{const help=$('#instructions');help.hidden=!help.hidden;$('#help-toggle').setAttribute('aria-expanded',String(!help.hidden));};
 $('#mode-switch').onclick=()=>walk?overview():setWalk();
 $('#put-back').onclick=()=>hands.release();
-$('#take-item').onclick=()=>{const target=targetAt(innerWidth/2,innerHeight/2);if(target?.item)hands.take(target.item);};
-let aimTimer=0;
 function targetAt(x,y){
  if(!room)return null;pointer.set(x/innerWidth*2-1,-y/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);
  const hits=raycaster.intersectObject(room,true);
