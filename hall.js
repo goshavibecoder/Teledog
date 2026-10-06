@@ -15,7 +15,7 @@ async function loadCompressedModel(url){
  return new GLTFLoader().parseAsync(buffer,'./assets/');
 }
 async function loadClownHead(){
- const response=await fetch('./assets/clown-head.json?v=hall29');
+ const response=await fetch('./assets/clown-head.json?v=hall30');
  if(!response.ok)throw new Error(`Clown head: ${response.status}`);
  return response.json();
 }
@@ -56,22 +56,34 @@ export function fixClownBrows(hall){
 export function revealFrogGlass(hall){
  const glass=hall.getObjectByName('Hall_ShowcaseGlass')||hall.getObjectByName('Hall ShowcaseGlass');
  if(!glass?.isMesh)throw new Error('Showcase glass is missing');
- const source=glass.geometry,index=source.getIndex(),position=source.getAttribute('position');
- const frog=[],other=[];
+ const source=glass.geometry,index=source.getIndex(),position=source.getAttribute('position'),other=[];
  for(let i=0;i<index.count;i+=3){
   const ids=[index.getX(i),index.getX(i+1),index.getX(i+2)];
-  const belongs=ids.every(v=>position.getX(v)<3.62&&position.getZ(v)>.51);
-  (belongs?frog:other).push(...ids);
+  if(!ids.every(v=>position.getX(v)<3.62&&position.getZ(v)>.51))other.push(...ids);
  }
- if(!frog.length)throw new Error('Green frog glass panels are missing');
- const panels=source.clone();panels.setIndex(frog);panels.computeBoundingBox();panels.computeBoundingSphere();
- glass.geometry=source.clone();glass.geometry.setIndex(other);glass.geometry.computeBoundingBox();glass.geometry.computeBoundingSphere();
- const material=glass.material.clone();material.opacity=.14;material.transparent=true;
- material.depthWrite=false;material.side=THREE.FrontSide;material.roughness=.08;
- const enclosure=new THREE.Mesh(panels,material);enclosure.name='Green frog showcase glass';enclosure.renderOrder=2;enclosure.userData.gallery=true;hall.add(enclosure);
- const size=panels.boundingBox.getSize(new THREE.Vector3()),center=panels.boundingBox.getCenter(new THREE.Vector3());
- const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(size.x,size.y,size.z)),new THREE.LineBasicMaterial({color:0xb7e4f2,transparent:true,opacity:.28,depthWrite:false}));
- edges.name='Green frog glass edges';edges.position.copy(center);edges.userData.gallery=true;edges.renderOrder=3;hall.add(edges);
+ glass.geometry=source.clone();glass.geometry.setIndex(other);
+ // Five explicit panels form a cap over the frog: front, rear, sides and roof.
+ const enclosure=new THREE.Group();enclosure.name='Green frog showcase glass';enclosure.userData.gallery=true;
+ const width=1.51,height=1.408,depth=.95,center=new THREE.Vector3(2.86,.944,.99);
+ const material=new THREE.MeshStandardMaterial({color:0xc4e8f2,transparent:true,opacity:.23,roughness:.055,metalness:.12,envMapIntensity:1.8,depthWrite:false,side:THREE.DoubleSide});
+ function panel(name,w,h,x,y,z,rx=0,ry=0){
+  const pane=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material);pane.name=name;
+  pane.position.set(x,y,z);pane.rotation.set(rx,ry,0);pane.renderOrder=3;pane.userData.gallery=true;enclosure.add(pane);return pane;
+ }
+ panel('Frog glass front',width,height,center.x,center.y,1.465);
+ panel('Frog glass rear',width,height,center.x,center.y,.515);
+ panel('Frog glass left',depth,height,2.105,center.y,center.z,0,Math.PI/2);
+ panel('Frog glass right',depth,height,3.615,center.y,center.z,0,Math.PI/2);
+ panel('Frog glass roof',width,depth,center.x,1.648,center.z,-Math.PI/2);
+ hall.add(enclosure);
+ const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(width,height,depth)),new THREE.LineBasicMaterial({color:0xe0f5ff,transparent:true,opacity:.65,depthWrite:false}));
+ edges.name='Green frog glass edges';edges.position.copy(center);edges.userData.gallery=true;edges.renderOrder=4;hall.add(edges);
+ // Narrow reflected strips make the front pane readable against the green toy.
+ const reflectionMaterial=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12,depthWrite:false,side:THREE.DoubleSide});
+ for(const [x,y,h] of [[2.28,.95,.95],[3.43,1.12,.50]]){
+  const reflection=new THREE.Mesh(new THREE.PlaneGeometry(.026,h),reflectionMaterial);
+  reflection.name='Frog glass reflection';reflection.position.set(x,y,1.466);reflection.rotation.z=-.12;reflection.renderOrder=4;reflection.userData.gallery=true;hall.add(reflection);
+ }
  return enclosure;
 }
 export async function addHall(room){
