@@ -22,7 +22,7 @@ jobs:
       - name: Prepare static files
         run: |
           mkdir -p public
-          cp index.html style.css app.js navigation.js x-logo.js public/
+          cp index.html style.css app.js navigation.js x-logo.js interactions.js public/
           cp -r vendor public/vendor
           mkdir -p public/assets
           cp assets/room.glb.part1 assets/room.glb.part2 assets/room-poster.png public/assets/

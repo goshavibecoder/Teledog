@@ -25,3 +25,9 @@ Links:
 - https://dedust.io/swap/GRAM/EQAm-H72S6NMaO3KEP7jFXPnupsgO0s-mggOKW89l098lL57
 
 Validation: navigation/link unit tests and GLB structure/animation checks pass. The character pose was inspected in a Blender render. Browser QA and real mobile performance were not verified in this environment.
+
+## First-person interactions
+
+Use the small **Первое лицо** button to enter the room; **Общий вид** returns to the orbit camera. On iPad/iPhone, drag the scene to look, move with the joystick, and tap a nearby toy, keyboard, or monitor to hold it between the hands. **Вернуть предмет** returns it to its original position. On desktop, use WASD/arrows, E to pick up the item under the center dot or return the held item, and Escape for the overview. Only one item can be held; taking another first returns the current one. The waving sofa character and hologram are excluded from pickup.
+
+`npm test` also validates object grouping, hand placement, complete transform/material restoration, and occlusion/reach using the real GLB hierarchy and bounds without requiring a GPU.
