@@ -5,6 +5,7 @@ from pxr import Usd,UsdGeom,UsdShade,Gf
 s=Usd.Stage.Open(sys.argv[1])
 cache=UsdGeom.XformCache(0);groups={};mats=[];keys={}
 for p in Usd.PrimRange(s.GetPrimAtPath('/Teledog/Hall')):
+ if str(p.GetPath()).startswith('/Teledog/Hall/SeatedFrogStatue'):continue
  if not p.IsA(UsdGeom.Mesh) and not p.IsA(UsdGeom.Cube):continue
  material=UsdShade.MaterialBindingAPI(p).ComputeBoundMaterial()[0]
  key=str(material.GetPath())
