@@ -4,17 +4,17 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {fixRoomVisuals} from './visual-fixes.js?v=visual7';
-import {registerItems,HandInteraction} from './interactions.js?v=visual7';
+import {fixRoomVisuals} from './visual-fixes.js?v=english8';
+import {registerItems,HandInteraction} from './interactions.js?v=english8';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
-try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){showError('3D недоступен. Открой сайт в Safari или Chrome.');throw e;}
+try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){showError('3D is unavailable. Open the site in Safari or Chrome.');throw e;}
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;host.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#081829');scene.fog=new THREE.Fog('#081829',14,30);
 const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.035,40);camera.position.set(4.5,3.4,6.0);
 scene.add(camera);
-const hands=new HandInteraction(scene,camera,label=>{$('#put-back').hidden=!label;$('#put-back').setAttribute('aria-label',label?'Вернуть '+label+' на место':'Вернуть предмет');});
+const hands=new HandInteraction(scene,camera,label=>{$('#put-back').hidden=!label;$('#put-back').setAttribute('aria-label',label?'Put '+label+' back':'Put back');});
 function showError(message){$('#loading-dot').hidden=true;$('#error-panel').hidden=false;$('#error-text').textContent=message;$('#retry').onclick=()=>location.reload();}
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(-.20,.98,0);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=2.3;controls.maxDistance=9;controls.maxPolarAngle=Math.PI*.49;controls.enablePan=false;controls.update();
 const pmrem=new THREE.PMREMGenerator(renderer),environment=new RoomEnvironment();scene.environment=pmrem.fromScene(environment,.04).texture;environment.dispose();pmrem.dispose();
@@ -40,11 +40,11 @@ loadRoom(g=>{
  fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;
  window.teledog={room,mixer,camera,controls,setWalk,logoLink,hands};
-},e=>{if(e.total){progress.textContent=Math.min(99,Math.round(e.loaded/e.total*100))+'%';}},e=>{console.error('Room loading failed',e);showError('Комната не загрузилась. Попробуй ещё раз.');});
-function overview(){hands.release();walk=false;camera.fov=38;camera.updateProjectionMatrix();$('#mode-switch').textContent='Первое лицо';$('#mode-switch').setAttribute('aria-pressed','false');$('#crosshair').hidden=true;controls.enabled=true;camera.position.set(4.5,3.4,6.0);controls.target.set(-.2,.98,0);controls.update();$('#joystick').hidden=true;$('#move-buttons').hidden=true;$('#overview').classList.add('active');$('#walk').classList.remove('active');$('#mode-label').textContent='3D SHOWROOM';keys.clear();stickVector={forward:0,right:0};}
-function setWalk(){if(!room)return;walk=true;camera.fov=55;camera.updateProjectionMatrix();$('#mode-switch').textContent='Общий вид';$('#mode-switch').setAttribute('aria-pressed','true');$('#crosshair').hidden=false;controls.enabled=false;camera.position.set(-.72,1.30,1.03);const target=new THREE.Vector3(.64,1.18,-.87).sub(camera.position);yaw=Math.atan2(-target.x,-target.z);pitch=Math.atan2(target.y,Math.hypot(target.x,target.z));camera.rotation.set(pitch,yaw,0,'YXZ');$('#joystick').hidden=false;$('#move-buttons').hidden=false;$('#overview').classList.remove('active');$('#walk').classList.add('active');$('#mode-label').textContent='WALK AROUND';}
-enter.onclick=()=>{if(!room)return;entered=true;document.body.classList.add('entered');$('#toolbar').hidden=false;overview();if(reduced)waveActions.forEach(a=>a.reset().setLoop(THREE.LoopOnce,1).play());toast('Добро пожаловать! Нажми на логотипы на стене.');};
-$('#overview').onclick=overview;$('#walk').onclick=setWalk;$('#wave').onclick=()=>{waveActions.forEach(a=>{a.setLoop(reduced?THREE.LoopOnce:THREE.LoopRepeat,reduced?1:Infinity);a.reset().play();});toast('Привет от Teledog 👋');};
+},e=>{if(e.total){progress.textContent=Math.min(99,Math.round(e.loaded/e.total*100))+'%';}},e=>{console.error('Room loading failed',e);showError('The room could not load. Please try again.');});
+function overview(){hands.release();walk=false;camera.fov=38;camera.updateProjectionMatrix();$('#mode-switch').textContent='First person';$('#mode-switch').setAttribute('aria-pressed','false');$('#crosshair').hidden=true;controls.enabled=true;camera.position.set(4.5,3.4,6.0);controls.target.set(-.2,.98,0);controls.update();$('#joystick').hidden=true;$('#move-buttons').hidden=true;$('#overview').classList.add('active');$('#walk').classList.remove('active');$('#mode-label').textContent='3D SHOWROOM';keys.clear();stickVector={forward:0,right:0};}
+function setWalk(){if(!room)return;walk=true;camera.fov=55;camera.updateProjectionMatrix();$('#mode-switch').textContent='Overview';$('#mode-switch').setAttribute('aria-pressed','true');$('#crosshair').hidden=false;controls.enabled=false;camera.position.set(-.72,1.30,1.03);const target=new THREE.Vector3(.64,1.18,-.87).sub(camera.position);yaw=Math.atan2(-target.x,-target.z);pitch=Math.atan2(target.y,Math.hypot(target.x,target.z));camera.rotation.set(pitch,yaw,0,'YXZ');$('#joystick').hidden=false;$('#move-buttons').hidden=false;$('#overview').classList.remove('active');$('#walk').classList.add('active');$('#mode-label').textContent='WALK AROUND';}
+enter.onclick=()=>{if(!room)return;entered=true;document.body.classList.add('entered');$('#toolbar').hidden=false;overview();if(reduced)waveActions.forEach(a=>a.reset().setLoop(THREE.LoopOnce,1).play());toast('Welcome! Tap the logos on the wall.');};
+$('#overview').onclick=overview;$('#walk').onclick=setWalk;$('#wave').onclick=()=>{waveActions.forEach(a=>{a.setLoop(reduced?THREE.LoopOnce:THREE.LoopRepeat,reduced?1:Infinity);a.reset().play();});toast('Hello from Teledog 👋');};
 $('#help-toggle').onclick=()=>{const help=$('#instructions');help.hidden=!help.hidden;$('#help-toggle').setAttribute('aria-expanded',String(!help.hidden));};
 $('#mode-switch').onclick=()=>walk?overview():setWalk();
 $('#put-back').onclick=()=>hands.release();

@@ -8,15 +8,15 @@ export function registerItems(room){
  const objects=[];room.traverse(o=>objects.push(o));
  for(const o of objects){
   const name=sourceName(o);
-  if(name==='Compact keyboard')add(o,'Клавиатура');
-  else if(/^Shelf Teledog \d+ .*Character turntable/.test(name))add(o,'Игрушка');
-  else if(/^Packaged shelf toy \d+ .*Character turntab/.test(name))add(o,'Игрушка');
-  else if(name==='Counter mascot Display 1-1 Character turntable')add(o,'Игрушка');
+  if(name==='Compact keyboard')add(o,'Keyboard');
+  else if(/^Shelf Teledog \d+ .*Character turntable/.test(name))add(o,'Toy');
+  else if(/^Packaged shelf toy \d+ .*Character turntab/.test(name))add(o,'Toy');
+  else if(name==='Counter mascot Display 1-1 Character turntable')add(o,'Toy');
  }
  const monitorParts=objects.filter(o=>/^Desktop monitor (foot|frame|stem)$/.test(sourceName(o))||sourceName(o)==='TELEDOG chart computer screen');
  if(monitorParts.length){
   const monitor=new THREE.Group();monitor.name='Interactive monitor';room.add(monitor);room.updateMatrixWorld(true);
-  monitorParts.forEach(o=>monitor.attach(o));add(monitor,'Монитор');
+  monitorParts.forEach(o=>monitor.attach(o));add(monitor,'Monitor');
  }
  return items;
 }
@@ -52,7 +52,7 @@ export class HandInteraction{
   const saved={item,parent:item.parent,position:item.position.clone(),quaternion:item.quaternion.clone(),scale:item.scale.clone(),materials:[],hidden:[]};
   const box=new THREE.Box3().setFromObject(item);const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
   const front=new THREE.Vector3(0,0,1);
-  if(item.userData.pickup.label==='Игрушка'){
+  if(item.userData.pickup.label==='Toy'){
    let head=null;const eyes=[];item.traverse(o=>{const name=sourceName(o);
     if(/white head/i.test(name))head=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
     if(/left eye|right eye/i.test(name))eyes.push(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));
@@ -60,8 +60,8 @@ export class HandInteraction{
    if(head&&eyes.length){front.copy(eyes.reduce((sum,v)=>sum.add(v),new THREE.Vector3()).divideScalar(eyes.length).sub(head));front.y=0;front.normalize();}
   }
   const holder=new THREE.Group();this.scene.add(holder);holder.attach(item);this.rig.add(holder);
-  if(item.userData.pickup.label==='Игрушка')holder.rotation.y=-Math.atan2(front.x,front.z);
-  const max=Math.max(size.x,size.y,size.z,.001),factor=Math.min(1,(item.userData.pickup.label==='Монитор'?.44:.33)/max);
+  if(item.userData.pickup.label==='Toy')holder.rotation.y=-Math.atan2(front.x,front.z);
+  const max=Math.max(size.x,size.y,size.z,.001),factor=Math.min(1,(item.userData.pickup.label==='Monitor'?.44:.33)/max);
   holder.scale.setScalar(factor);holder.position.copy(center).multiplyScalar(-factor).applyQuaternion(holder.quaternion);
   this.scene.updateMatrixWorld(true);
   const alignedCenter=this.rig.worldToLocal(new THREE.Box3().setFromObject(item).getCenter(new THREE.Vector3()));holder.position.sub(alignedCenter);
@@ -69,7 +69,7 @@ export class HandInteraction{
   item.traverse(o=>{if(!o.isMesh)return;saved.materials.push({o,material:o.material,order:o.renderOrder,layers:o.layers.mask});
    const clone=m=>{const c=m.clone();c.depthTest=true;return c;};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);o.renderOrder=1001;o.layers.set(1);
   });
-  if(item.userData.pickup.label==='Монитор')this.scene.traverse(o=>{if(sourceName(o)==='Monitor connected cable'){saved.hidden.push({o,visible:o.visible});o.visible=false;}});
+  if(item.userData.pickup.label==='Monitor')this.scene.traverse(o=>{if(sourceName(o)==='Monitor connected cable'){saved.hidden.push({o,visible:o.visible});o.visible=false;}});
   saved.holder=holder;this.held=saved;this.rig.visible=true;this.onChange(item.userData.pickup.label);return true;
  }
  release(){

@@ -25,8 +25,8 @@ function fixture(){
 }
 test('loader-sanitized room names register keyboard, complete monitor and toys',()=>{
  const {items}=fixture();assert.ok(items.length>=17);
- assert.equal(items.filter(i=>i.userData.pickup.label==='Монитор').length,1);
- assert.equal(items.find(i=>i.userData.pickup.label==='Монитор').children.length,4);
+ assert.equal(items.filter(i=>i.userData.pickup.label==='Monitor').length,1);
+ assert.equal(items.find(i=>i.userData.pickup.label==='Monitor').children.length,4);
  assert.ok(items.some(i=>i.userData.name==='Compact keyboard'));assert.ok(items.some(i=>i.userData.name?.startsWith('Shelf Teledog')));
  assert.ok(!items.some(i=>/Large seated|greeting|hologram/i.test(i.name)));
 });
@@ -55,7 +55,7 @@ test('a wall blocks pickup, transparent glass does not, and distant objects cann
 test('held toys face the viewer from every camera direction',()=>{
  const {scene,camera,items}=fixture();const hands=new HandInteraction(scene,camera);
  for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]){camera.rotation.set(.2,yaw,0,'YXZ');
-  for(const item of items.filter(o=>o.userData.pickup.label==='Игрушка')){
+  for(const item of items.filter(o=>o.userData.pickup.label==='Toy')){
    hands.take(item);scene.updateMatrixWorld(true);let head;const eyes=[];
    item.traverse(o=>{const name=o.userData.name||o.name;if(/white head/i.test(name))head=camera.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));if(/left eye|right eye/i.test(name))eyes.push(camera.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3())));});
    assert.ok(head&&eyes.length);const front=eyes.reduce((s,v)=>s.add(v),new THREE.Vector3()).divideScalar(eyes.length).sub(head);assert.ok(front.z>0,'Eyes must face the viewer: '+item.name);hands.release();
@@ -64,7 +64,7 @@ test('held toys face the viewer from every camera direction',()=>{
 });
 
 test('held face details use depth testing in a separate layer and restore on return',()=>{
- const {scene,camera,items}=fixture();const hands=new HandInteraction(scene,camera);const toy=items.find(o=>o.userData.pickup.label==='Игрушка');const originals=[];toy.traverse(o=>{if(o.isMesh)originals.push([o,o.layers.mask]);});hands.take(toy);
+ const {scene,camera,items}=fixture();const hands=new HandInteraction(scene,camera);const toy=items.find(o=>o.userData.pickup.label==='Toy');const originals=[];toy.traverse(o=>{if(o.isMesh)originals.push([o,o.layers.mask]);});hands.take(toy);
  for(const [o] of originals){assert.equal(o.layers.mask,2);for(const m of Array.isArray(o.material)?o.material:[o.material])assert.equal(m.depthTest,true);}
  let cleared=0,rendered=0;const background=scene.background,mask=camera.layers.mask;const renderer={autoClear:true,clearDepth(){cleared++;},render(s,c){rendered++;assert.equal(c.layers.mask,2);assert.equal(s.background,null);assert.equal(this.autoClear,false);}};
  hands.render(renderer);assert.equal(cleared,1);assert.equal(rendered,1);assert.equal(camera.layers.mask,mask);assert.equal(scene.background,background);assert.equal(renderer.autoClear,true);
