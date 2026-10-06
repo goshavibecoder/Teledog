@@ -119,11 +119,12 @@ for band,(x,col) in enumerate(zip([-.355,-.255,-.135,.008,.154,.295],['Red','Ora
    ell('HairTempleRear'+str(band)+str(curl),(x*1.08,1.53-.083*curl,-.057),(.077,.089,.096),col)
 # Rear hair mirrors the front across the head centre; the lower rear head stays green.
 # Keep the entire sculpt attached while rounding the belly, cheeks and wig.
-from round_clown import round_mesh
+from round_clown import round_mesh,join_head_mesh
 for i, name in enumerate(preview_names):
  g=UsdGeom.Mesh.Get(stage,'/FrogClown/Geometry/'+name)
  p,f,c=preview[i]
  p,n=round_mesh(p,np.asarray(g.GetNormalsAttr().Get()))
+ if name=='Head':p,n=join_head_mesh(p,n)
  g.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(p))
  g.GetNormalsAttr().Set(Vt.Vec3fArray.FromNumpy(n))
  g.GetExtentAttr().Set([Gf.Vec3f(*map(float,p.min(0))),Gf.Vec3f(*map(float,p.max(0)))])

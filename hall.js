@@ -15,7 +15,7 @@ async function loadCompressedModel(url){
  return new GLTFLoader().parseAsync(buffer,'./assets/');
 }
 async function loadClownHead(){
- const response=await fetch('./assets/clown-head.json?v=hall26');
+ const response=await fetch('./assets/clown-head.json?v=hall27');
  if(!response.ok)throw new Error(`Clown head: ${response.status}`);
  return response.json();
 }
@@ -30,14 +30,6 @@ export function applyClownHead(hall,head){
   buffer.array.set(values);buffer.needsUpdate=true;
  }
  mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
-}
-export function joinClownNeck(hall){
- const head=hall.getObjectByName('Hall_Green')||hall.getObjectByName('Hall Green');
- const neck=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),head.material.clone());
- neck.name='Clown rear neck connection';neck.userData.gallery=true;
- neck.scale.set(.23*.75,.15*.75,.24*.75);
- neck.position.set(4.40,.2461+1.07*.75,-1.02-.11*.75);
- hall.add(neck);return neck;
 }
 export function revealFrogGlass(hall){
  const glass=hall.getObjectByName('Hall_ShowcaseGlass')||hall.getObjectByName('Hall ShowcaseGlass');
@@ -66,7 +58,7 @@ export async function addHall(room){
  hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallBase'){
   const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++)if(Math.abs(positions.getY(i)-.24)<1e-6)positions.setY(i,.2415);positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
  }if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
- joinClownNeck(hall);revealFrogGlass(hall);
+ revealFrogGlass(hall);
  placeGreenFrog(frog.scene,hall);
  room.add(hall);
  // The original floor ends at the open right side; bridge it to the doorway.
