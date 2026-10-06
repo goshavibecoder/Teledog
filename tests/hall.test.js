@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import * as THREE from '../vendor/build/three.module.js';
 import {registerHooks} from 'node:module';
-registerHooks({resolve(specifier,context,next){if(specifier==='three')return {url:new URL('../vendor/build/three.module.js',import.meta.url).href,shortCircuit:true};return next(specifier,context);}});
+registerHooks({resolve(specifier,context,next){if(specifier==='three')return {url:new URL('../vendor/build/three.module.js',import.meta.url).href,shortCircuit:true};if(specifier.startsWith('three/addons/'))return {url:new URL('../vendor/examples/jsm/'+specifier.slice(13),import.meta.url).href,shortCircuit:true};return next(specifier,context);}});
 const {GLTFLoader}=await import('../vendor/examples/jsm/loaders/GLTFLoader.js');
+const {addHall}=await import('../hall.js');
 import {isWalkable,slideMove} from '../navigation.js';
 
 test('continuous doorway route enters the gallery and returns without crossing showcases',()=>{
@@ -35,4 +36,17 @@ test('published gallery parses as real geometry with glass and an unobstructed d
  assert.equal(ray.intersectObject(g.scene,true).length,0);
  const bounds=new THREE.Box3().setFromObject(g.scene);
  assert.ok(bounds.max.x>6.5&&bounds.max.y>=2.5);
+});
+
+test('gallery threshold fills only the gap and the floor uses stable opaque shading',async()=>{
+ const originalFetch=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
+ try{
+  const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
+  const bridge=hall.getObjectByName('Gallery threshold');const box=new THREE.Box3().setFromObject(bridge);
+  assert.ok(box.min.x>=1.68-1e-7&&box.max.x<=1.70+1e-7);
+  const floor=hall.getObjectByName('Hall_HallFloor');assert.equal(floor.material.side,THREE.FrontSide);assert.ok(floor.material.roughness>=.45);assert.equal(floor.material.transparent,false);
+  const ray=new THREE.Raycaster(new THREE.Vector3(2,.1,0),new THREE.Vector3(0,-1,0),0,.2);
+  const hits=ray.intersectObject(floor);assert.equal(hits.length,1);assert.ok(Math.abs(hits[0].point.y)<1e-6);
+ }finally{globalThis.fetch=originalFetch;}
 });
