@@ -7,7 +7,11 @@ export const CHARACTERS=Object.freeze({
   'What started as a simple Sonic-inspired figure transformed into the legendary Telegram mascot representing speed, community, and innovation.',
   'Fastest meme on the fastest chain — powered by TON.'
  ]},
- groyper:{id:'groyper',name:'GROYPER',paragraphs:[]},
+ groyper:{id:'groyper',name:'GROYPER',image:'./assets/groyper-character.png',paragraphs:[
+  'The groyper meme itself was born on 4chan in 2015 and was long associated with internet trolling and nationalist political movements.',
+  'Today, Groyper is the symbol of alt-right nationalists and conservatives led by political commentator Nicholas J. Fuentes who are critical of mainstream conservative groups and speakers due to them stepping away from values considered “true conservatism.”',
+  'The movement has also been associated with antisemitic conspiracy rhetoric.'
+ ]},
  clown:{id:'clown',name:'HONK',image:'./assets/honkler-character.png',paragraphs:[
   'Honkler is a rainbow-wigged clown Pepe that embodies internet absurdity and satire. Unbothered by the nonsense around him, he just honks his way through Clown World.'
  ]},
