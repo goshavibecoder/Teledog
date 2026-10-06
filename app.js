@@ -4,9 +4,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {addSpeaker} from './speaker.js?v=speaker9';
-import {fixRoomVisuals} from './visual-fixes.js?v=speaker9';
-import {registerItems,HandInteraction} from './interactions.js?v=speaker9';
+import {addSpeaker} from './speaker.js?v=music10';
+import {createSpeakerPlayer} from './speaker-player.js?v=music10';
+import {fixRoomVisuals} from './visual-fixes.js?v=music10';
+import {registerItems,HandInteraction} from './interactions.js?v=music10';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -21,8 +22,10 @@ const controls=new OrbitControls(camera,renderer.domElement);controls.target.set
 const pmrem=new THREE.PMREMGenerator(renderer),environment=new RoomEnvironment();scene.environment=pmrem.fromScene(environment,.04).texture;environment.dispose();pmrem.dispose();
 scene.add(new THREE.HemisphereLight(0xc7eaff,0x28415a,2));const sun=new THREE.DirectionalLight(0xffffff,3.0);sun.position.set(2,5,4);scene.add(sun);const fill=new THREE.DirectionalLight(0x86cfff,1.2);fill.position.set(-3,2,-1);scene.add(fill);scene.traverse(o=>{if(o.isLight)o.layers.enable(1);});
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x081829,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.091;scene.add(ground);
+let speakerPlayer;
 let room,mixer,walk=false,entered=false,yaw=0,pitch=0,waveActions=[],pendingPointer=null,stickVector={forward:0,right:0},moveButton=null;
 const clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),keys=new Set();
+raycaster.layers.enable(1);
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('visible'),3300);}
 function loadRoom(onLoad,onProgress,onError){
  let loaded=0;
@@ -36,7 +39,7 @@ function loadRoom(onLoad,onProgress,onError){
  }).catch(onError);
 }
 loadRoom(g=>{
- room=g.scene;scene.add(room);addXLogo(room);addSpeaker(room);mixer=new THREE.AnimationMixer(room);
+ room=g.scene;scene.add(room);addXLogo(room);speakerPlayer=createSpeakerPlayer(addSpeaker(room));mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;
@@ -52,9 +55,11 @@ $('#put-back').onclick=()=>hands.release();
 function targetAt(x,y){
  if(!room)return null;pointer.set(x/innerWidth*2-1,-y/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);
  const hits=raycaster.intersectObject(room,true);
+ if(hands.held)hits.push(...raycaster.intersectObject(hands.rig,true));hits.sort((a,b)=>a.distance-b.distance);
  for(const hit of hits){
   const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];
   if(mats.every(m=>m?.transparent&&m.opacity<.4))continue;
+  if(hit.object.userData.speakerScreen)return {speakerPlayer:true};
   let o=hit.object;while(o){const url=logoLink(o.name);if(url)return {url};o=o.parent;}
   break;
  }
@@ -62,11 +67,11 @@ function targetAt(x,y){
 }
 renderer.domElement.addEventListener('pointerdown',e=>{pendingPointer={target:walk?targetAt(e.clientX,e.clientY):null,id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};if(walk)renderer.domElement.setPointerCapture(e.pointerId);});
 renderer.domElement.addEventListener('pointermove',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId){const p=pendingPointer;if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>14)p.moved=true;if(walk){yaw-=(e.clientX-p.lastX)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-p.lastY)*.004,-1.12,1.12);camera.rotation.set(pitch,yaw,0,'YXZ');}p.lastX=e.clientX;p.lastY=e.clientY;}else if(e.pointerType==='mouse'){renderer.domElement.style.cursor=targetAt(e.clientX,e.clientY)?'pointer':walk?'grab':'default';}});
-renderer.domElement.addEventListener('pointerup',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId&&!pendingPointer.moved){const target=pendingPointer.target||targetAt(e.clientX,e.clientY);if(target?.url)window.open(target.url,'_blank','noopener,noreferrer');else if(target?.item)hands.take(target.item);}pendingPointer=null;});renderer.domElement.addEventListener('pointercancel',()=>pendingPointer=null);
+renderer.domElement.addEventListener('pointerup',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId&&!pendingPointer.moved){const target=pendingPointer.target||targetAt(e.clientX,e.clientY);if(target?.speakerPlayer)speakerPlayer.show();else if(target?.url)window.open(target.url,'_blank','noopener,noreferrer');else if(target?.item)hands.take(target.item);}pendingPointer=null;});renderer.domElement.addEventListener('pointercancel',()=>pendingPointer=null);
 const joy=$('#joystick'),stick=$('#stick');let joyId=null;
 function updateStick(e){const b=joy.getBoundingClientRect(),dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2,length=Math.max(1,Math.hypot(dx,dy)/35),x=dx/length,y=dy/length;stick.style.transform=`translate(${x}px,${y}px)`;stickVector={forward:-y/35,right:x/35};}
 joy.addEventListener('pointerdown',e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);updateStick(e);});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)updateStick(e);});function resetStick(){joyId=null;stickVector={forward:0,right:0};stick.style.transform='';}joy.addEventListener('pointerup',resetStick);joy.addEventListener('pointercancel',resetStick);
 for(const b of document.querySelectorAll('[data-move]')){b.addEventListener('pointerdown',e=>{moveButton=b.dataset.move;b.setPointerCapture(e.pointerId);});b.addEventListener('pointerup',()=>moveButton=null);b.addEventListener('pointercancel',()=>moveButton=null);}
 window.addEventListener('keydown',e=>{if(walk&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.add(e.code);}if(e.code==='KeyE'&&walk){if(hands.held)hands.release();else {const t=targetAt(innerWidth/2,innerHeight/2);if(t?.item)hands.take(t.item);}}if(e.code==='Escape')overview();});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();resetStick();moveButton=null;pendingPointer=null;});document.addEventListener('visibilitychange',()=>clock.getDelta());
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);if(document.hidden)return;if(mixer)mixer.update(dt);if(walk){const forward=stickVector.forward+(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)+(moveButton==='forward'?1:0)-(moveButton==='back'?1:0),right=stickVector.right+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+(moveButton==='right'?1:0)-(moveButton==='left'?1:0);const p=slideMove(camera.position,movement(yaw,forward,right,dt));camera.position.x=p.x;camera.position.z=p.z;hands.update(dt,Math.abs(forward)+Math.abs(right)>0);}else controls.update();renderer.render(scene,camera);hands.render(renderer);});
+renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);if(document.hidden)return;if(mixer)mixer.update(dt);if(speakerPlayer)speakerPlayer.update(dt);if(walk){const forward=stickVector.forward+(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)+(moveButton==='forward'?1:0)-(moveButton==='back'?1:0),right=stickVector.right+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+(moveButton==='right'?1:0)-(moveButton==='left'?1:0);const p=slideMove(camera.position,movement(yaw,forward,right,dt));camera.position.x=p.x;camera.position.z=p.z;hands.update(dt,Math.abs(forward)+Math.abs(right)>0);}else controls.update();renderer.render(scene,camera);hands.render(renderer);});

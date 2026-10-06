@@ -7,6 +7,7 @@ import {registerItems,HandInteraction} from '../interactions.js';
 test('branded speaker sits fully on the desk and can be picked up and returned',()=>{
  const scene=new THREE.Scene(),room=new THREE.Group(),camera=new THREE.PerspectiveCamera();scene.add(room,camera);
  const mascot=new THREE.Texture();const original=new THREE.Mesh(new THREE.PlaneGeometry(),new THREE.MeshBasicMaterial({map:mascot}));original.material.name='TELEDOG transparent cutout';room.add(original);
+ const brand=new THREE.Mesh(new THREE.BoxGeometry(4, .01, 1),new THREE.MeshBasicMaterial());brand.name='Approved white fa';room.add(brand);
  const speaker=addSpeaker(room);scene.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(speaker);assert.ok(bounds.min.y>=.9299);assert.ok(bounds.min.x>.595&&bounds.max.x<1.565);assert.ok(bounds.min.z>.64&&bounds.max.z<1.24);
  // The speaker stays in front of the PC and to the left of the keyboard.
