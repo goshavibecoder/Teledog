@@ -49,7 +49,7 @@ export class HandInteraction{
  }
  take(item){
   if(!item?.userData.pickup)return false;
-  this.release();this.scene.updateMatrixWorld(true);
+  this.release();this.rig.position.set(0,item.userData.pickup.label==='Paper'?.015:-.19,-.64);this.scene.updateMatrixWorld(true);
   const saved={item,parent:item.parent,position:item.position.clone(),quaternion:item.quaternion.clone(),scale:item.scale.clone(),materials:[],hidden:[]};
   const box=new THREE.Box3().setFromObject(item);const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
   const front=new THREE.Vector3(0,0,1);
@@ -62,11 +62,14 @@ export class HandInteraction{
   }
   const holder=new THREE.Group();this.scene.add(holder);holder.attach(item);this.rig.add(holder);
   if(item.userData.pickup.label==='Toy')holder.rotation.y=-Math.atan2(front.x,front.z);
-  const max=Math.max(size.x,size.y,size.z,.001),factor=Math.min(1,(item.userData.pickup.label==='Monitor'?.44:.33)/max);
+  const max=Math.max(size.x,size.y,size.z,.001);
+  const paper=item.userData.pickup.label==='Paper',viewHeight=2*.64*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2));
+  const limit=paper?Math.min(viewHeight*.82,viewHeight*this.camera.aspect*.9*size.y/size.x):(item.userData.pickup.label==='Monitor'?.44:.33);
+  const factor=Math.min(1,limit/max);
   holder.scale.setScalar(factor);holder.position.copy(center).multiplyScalar(-factor).applyQuaternion(holder.quaternion);
   this.scene.updateMatrixWorld(true);
   const alignedCenter=this.rig.worldToLocal(new THREE.Box3().setFromObject(item).getCenter(new THREE.Vector3()));holder.position.sub(alignedCenter);
-  const width=size.x*factor;this.hands.forEach((h,i)=>h.position.x=(i===0?-1:1)*Math.max(.10,width*.40));
+  const width=size.x*factor;this.hands.forEach((h,i)=>{h.position.x=(i===0?-1:1)*Math.max(.10,width*(paper?.48:.40));h.position.y=paper?-size.y*factor*.43:-.12;});
   item.traverse(o=>{if(!o.isMesh)return;saved.materials.push({o,material:o.material,order:o.renderOrder,layers:o.layers.mask});
    const clone=m=>{const c=m.clone();c.depthTest=true;return c;};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);o.renderOrder=1001;o.layers.set(1);
   });
@@ -89,6 +92,6 @@ export class HandInteraction{
  }
  update(dt,moving){
   this.phase=(this.phase||0)+dt*(moving?8:2);const bob=moving?.008:.002;
-  this.rig.position.y=-.19+Math.sin(this.phase)*bob;
+  this.rig.position.y=(this.held?.item.userData.pickup.label==='Paper'?.015:-.19)+Math.sin(this.phase)*bob;
  }
 }
