@@ -10,7 +10,8 @@ export async function addHall(room){
  hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
  room.add(hall);
  // The original floor ends at the open right side; bridge it to the doorway.
- const bridge=new THREE.Mesh(new THREE.BoxGeometry(.02,.028,1.46),new THREE.MeshStandardMaterial({color:0x173c50,roughness:.4}));bridge.name='Gallery threshold';bridge.position.set(1.69,-.014,.23);hall.add(bridge);
+ const floor=hall.getObjectByName('Hall_HallFloor');
+ const bridge=new THREE.Mesh(new THREE.BoxGeometry(.02,.028,1.46),floor.material.clone());bridge.name='Gallery threshold';bridge.position.set(1.69,-.014,.23);hall.add(bridge);
  const light=new THREE.PointLight(0xc4eaff,7,7,2);light.position.set(4.2,2.2,0);hall.add(light);
  return hall;
 }
