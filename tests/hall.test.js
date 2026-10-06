@@ -45,6 +45,9 @@ test('gallery threshold fills only the gap and the floor uses stable opaque shad
   const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
   const bridge=hall.getObjectByName('Gallery threshold');const box=new THREE.Box3().setFromObject(bridge);
   assert.ok(box.min.x>=1.68-1e-7&&box.max.x<=1.70+1e-7);
+  const pedestalTop=hall.getObjectByName('Hall_HallBase');
+  const pedestalRay=new THREE.Raycaster(new THREE.Vector3(2.08,.25,1),new THREE.Vector3(0,-1,0),0,.03);
+  const topHits=pedestalRay.intersectObject(pedestalTop);assert.ok(topHits.length>0);assert.ok(Math.abs(topHits[0].point.y-.2415)<1e-6);
   const floor=hall.getObjectByName('Hall_HallFloor');assert.equal(floor.material.side,THREE.FrontSide);assert.ok(floor.material.roughness>=.45);assert.equal(floor.material.transparent,false);
   const ray=new THREE.Raycaster(new THREE.Vector3(2,.1,0),new THREE.Vector3(0,-1,0),0,.2);
   const hits=ray.intersectObject(floor);assert.equal(hits.length,1);assert.ok(Math.abs(hits[0].point.y)<1e-6);
