@@ -62,3 +62,11 @@ test('held toys face the viewer from every camera direction',()=>{
   }
  }
 });
+
+test('held face details use depth testing in a separate layer and restore on return',()=>{
+ const {scene,camera,items}=fixture();const hands=new HandInteraction(scene,camera);const toy=items.find(o=>o.userData.pickup.label==='Игрушка');const originals=[];toy.traverse(o=>{if(o.isMesh)originals.push([o,o.layers.mask]);});hands.take(toy);
+ for(const [o] of originals){assert.equal(o.layers.mask,2);for(const m of Array.isArray(o.material)?o.material:[o.material])assert.equal(m.depthTest,true);}
+ let cleared=0,rendered=0;const background=scene.background,mask=camera.layers.mask;const renderer={autoClear:true,clearDepth(){cleared++;},render(s,c){rendered++;assert.equal(c.layers.mask,2);assert.equal(s.background,null);assert.equal(this.autoClear,false);}};
+ hands.render(renderer);assert.equal(cleared,1);assert.equal(rendered,1);assert.equal(camera.layers.mask,mask);assert.equal(scene.background,background);assert.equal(renderer.autoClear,true);
+ hands.release();for(const [o,layers] of originals)assert.equal(o.layers.mask,layers);
+});
