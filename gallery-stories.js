@@ -20,7 +20,9 @@ export const CHARACTERS=Object.freeze({
   'Why now? Good question - but nothing happens without a reason.',
   'The dog theme runs deep through Telegram\'s history: Spotty (drawn by Pavel Durov), the iconic REDO gift, and now the .dog domain. Coincidence? Hardly.'
  ]},
- collectible:{id:'collectible',name:'Collectible',paragraphs:[]}
+ collectible:{id:'collectible',name:'ZOICH',image:'./assets/zoich-character.jpg',paragraphs:[
+  'ZOICH is a community owned meme token inspired by Zoich, the iconic blue frog created by artist and designer Egor Zhgun in 2010. With over 15 years of documented internet history, Zoich stands as one of the earliest internet frog legends, bringing creator legacy, meme culture, and online history to TON as the blue frog on the blue chain.'
+ ]}
 });
 export function registerGalleryStories(hall){
  const nodes=hall.children.slice(0,43);
