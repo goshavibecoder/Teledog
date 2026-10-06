@@ -14,9 +14,26 @@ async function loadCompressedModel(url){
  const buffer=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
  return new GLTFLoader().parseAsync(buffer,'./assets/');
 }
+async function loadClownHead(){
+ const response=await fetch('./assets/clown-head.json?v=hall25');
+ if(!response.ok)throw new Error(`Clown head: ${response.status}`);
+ return response.json();
+}
+export function applyClownHead(hall,head){
+ // The first 1,392 vertices in the green material group form the head.
+ // Keep the hands in that same group intact.
+ const mesh=hall.getObjectByName('Hall_Green')||hall.getObjectByName('Hall Green');
+ if(!mesh?.isMesh)throw new Error('Clown head mesh is missing');
+ for(const [attribute,values] of [['position',head.positions],['normal',head.normals]]){
+  const buffer=mesh.geometry.getAttribute(attribute);
+  if(values.length!==1392*3||buffer.array.length<values.length)throw new Error('Invalid clown head geometry');
+  buffer.array.set(values);buffer.needsUpdate=true;
+ }
+ mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
+}
 export async function addHall(room){
- const [gltf,frog]=await Promise.all([loadCompressedModel('./assets/hall.glb.gz?v=hall24'),loadCompressedModel('./assets/groyper_green.glb.gz?v=hall23')]);
- const hall=gltf.scene;hall.name='TELEDOG statue gallery';hall.userData.gallery=true;
+ const [gltf,frog,head]=await Promise.all([loadCompressedModel('./assets/hall.glb.gz?v=hall24'),loadCompressedModel('./assets/groyper_green.glb.gz?v=hall23'),loadClownHead()]);
+ const hall=gltf.scene;applyClownHead(hall,head);hall.name='TELEDOG statue gallery';hall.userData.gallery=true;
  hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallBase'){
   const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++)if(Math.abs(positions.getY(i)-.24)<1e-6)positions.setY(i,.2415);positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
  }if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});

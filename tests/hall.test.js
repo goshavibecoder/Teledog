@@ -40,9 +40,11 @@ test('published gallery parses as real geometry with glass and an unobstructed d
 
 test('gallery threshold fills only the gap and the floor uses stable opaque shading',async()=>{
  const originalFetch=globalThis.fetch;
- globalThis.fetch=async url=>new Response(url.includes('groyper_green')?texturelessFrog():fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
+ globalThis.fetch=async url=>new Response(url.includes('clown-head')?fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)):url.includes('groyper_green')?texturelessFrog():fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
  try{
   const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
+  const clown=hall.getObjectByName('Hall_Green');const head=JSON.parse(fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)));
+  assert.deepEqual(Array.from(clown.geometry.getAttribute('position').array.slice(0,1392*3)),Array.from(new Float32Array(head.positions)));
   const bridge=hall.getObjectByName('Gallery threshold');const box=new THREE.Box3().setFromObject(bridge);
   assert.ok(box.min.x>=1.68-1e-7&&box.max.x<=1.70+1e-7);
   const pedestalTop=hall.getObjectByName('Hall_HallBase');

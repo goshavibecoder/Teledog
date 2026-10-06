@@ -25,7 +25,7 @@ jobs:
           cp index.html style.css hall.js app.js navigation.js x-logo.js interactions.js visual-fixes.js speaker.js speaker-player.js speaker-notes.js room-sounds.js seated-repair.js public/
           cp -r vendor public/vendor
           mkdir -p public/assets
-          cp assets/groyper_green.glb.gz assets/hall.glb.gz assets/room.glb.part1 assets/room.glb.part2 assets/room-poster.png assets/own-live-internet.mp3 assets/faithful-vpns.mp3 public/assets/
+          cp assets/clown-head.json assets/groyper_green.glb.gz assets/hall.glb.gz assets/room.glb.part1 assets/room.glb.part2 assets/room-poster.png assets/own-live-internet.mp3 assets/faithful-vpns.mp3 public/assets/
       - uses: actions/upload-pages-artifact@v4
         with:
           path: public

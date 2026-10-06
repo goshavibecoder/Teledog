@@ -58,7 +58,7 @@ def pillow(name,outline,center,z,depth,col):
  n/=np.maximum(1e-9,np.linalg.norm(n,axis=1,keepdims=True));mesh(name,p,f,n,col)
 # Single broad pear-shaped suit and cheek-heavy head, without detached cheek balls.
 pillow('SuitTorso',[(-.275,1.08),(-.355,.98),(-.405,.76),(-.38,.58),(-.25,.445),(0,.42),(.25,.445),(.38,.58),(.405,.76),(.355,.98),(.275,1.08)],(0,.78),0,.350,'Blue')
-pillow('Head',[(-.33,1.075),(-.425,1.14),(-.43,1.29),(-.37,1.47),(-.24,1.565),(0,1.58),(.24,1.565),(.37,1.47),(.40,1.29),(.34,1.08),(0,1.06)],(0,1.30),.025,.325,'Green')
+pillow('Head',[(-.20,1.095),(-.35,1.16),(-.425,1.29),(-.385,1.435),(-.255,1.545),(0,1.585),(.255,1.545),(.375,1.435),(.415,1.29),(.34,1.16),(.20,1.095),(0,1.06)],(0,1.30),.025,.325,'Green')
 for side in [-1,1]:
  tag='Left' if side<0 else 'Right'
  # Shaped solid pant legs with soft knees, broad ankles and chunky shoes.
