@@ -1,4 +1,5 @@
 import * as THREE from './vendor/build/three.module.js';
+import {createSpeakerNotes} from './speaker-notes.js?v=notes14';
 
 export const SPEAKER_TRACKS=[
  {title:'Свой Живой Интернет',url:'./assets/own-live-internet.mp3'},
@@ -10,6 +11,7 @@ export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=320;
  const context=canvas.getContext('2d');const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  display.material.map=texture;display.material.color.set(0xffffff);display.material.needsUpdate=true;
+ const floatingNotes=createSpeakerNotes(speaker);
  const audio=new Audio();audio.preload='metadata';let audioContext,analyser,data,index=0,error='',elapsed=1;
  audio.src=SPEAKER_TRACKS[index].url;
  function initialiseAudio(){
@@ -36,6 +38,7 @@ export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  audio.addEventListener('ended',()=>{if(powered)select(1);});
  function time(seconds){if(!Number.isFinite(seconds))return '0:00';return Math.floor(seconds/60)+':'+String(Math.floor(seconds%60)).padStart(2,'0');}
  function update(dt){
+  floatingNotes.update(dt,powered&&!audio.paused&&!audio.ended&&!error);
   for(const [button,press] of presses){press.remaining-=dt;if(press.remaining<=0){button.position.y=press.restY;presses.delete(button);}}
   elapsed+=dt;if(elapsed<.08)return;elapsed=0;
   const active=!audio.paused&&!audio.ended;if(analyser)analyser.getByteFrequencyData(data);
