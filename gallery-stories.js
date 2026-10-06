@@ -11,7 +11,7 @@ export const CHARACTERS=Object.freeze({
  clown:{id:'clown',name:'HONK',image:'./assets/honkler-character.png',paragraphs:[
   'Honkler is a rainbow-wigged clown Pepe that embodies internet absurdity and satire. Unbothered by the nonsense around him, he just honks his way through Clown World.'
  ]},
- teledog:{id:'teledog',name:'TELEDOG',image:'./assets/teledog-character.jpg',paragraphs:[
+ teledog:{id:'teledog',name:'TELEDOG',image:'./assets/teledog-character.png',paragraphs:[
   'Telegram has several registered domains. Recently, they switched their main domain from telegram.org to telegram.dog - a domain that was registered 10.5 years ago but only went live on July 25, 2026.',
   'Why now? Good question - but nothing happens without a reason.',
   'The dog theme runs deep through Telegram\'s history: Spotty (drawn by Pavel Durov), the iconic REDO gift, and now the .dog domain. Coincidence? Hardly.'
