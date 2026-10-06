@@ -4,7 +4,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {registerItems,HandInteraction} from './interactions.js?v=face6';
+import {fixRoomVisuals} from './visual-fixes.js?v=visual7';
+import {registerItems,HandInteraction} from './interactions.js?v=visual7';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -36,7 +37,7 @@ function loadRoom(onLoad,onProgress,onError){
 loadRoom(g=>{
  room=g.scene;scene.add(room);addXLogo(room);mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
- room.traverse(o=>{if(o.isMesh){o.frustumCulled=true;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m.name.startsWith('Hologram')){m.transparent=true;m.depthWrite=false;}if(/glass|display window/i.test(m.name)){m.transparent=true;m.depthWrite=false;}}}});
+ fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;
  window.teledog={room,mixer,camera,controls,setWalk,logoLink,hands};
 },e=>{if(e.total){progress.textContent=Math.min(99,Math.round(e.loaded/e.total*100))+'%';}},e=>{console.error('Room loading failed',e);showError('Комната не загрузилась. Попробуй ещё раз.');});
