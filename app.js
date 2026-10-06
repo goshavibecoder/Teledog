@@ -4,8 +4,9 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {fixRoomVisuals} from './visual-fixes.js?v=english8';
-import {registerItems,HandInteraction} from './interactions.js?v=english8';
+import {addSpeaker} from './speaker.js?v=speaker9';
+import {fixRoomVisuals} from './visual-fixes.js?v=speaker9';
+import {registerItems,HandInteraction} from './interactions.js?v=speaker9';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -35,7 +36,7 @@ function loadRoom(onLoad,onProgress,onError){
  }).catch(onError);
 }
 loadRoom(g=>{
- room=g.scene;scene.add(room);addXLogo(room);mixer=new THREE.AnimationMixer(room);
+ room=g.scene;scene.add(room);addXLogo(room);addSpeaker(room);mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;

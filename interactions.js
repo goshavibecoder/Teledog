@@ -8,7 +8,8 @@ export function registerItems(room){
  const objects=[];room.traverse(o=>objects.push(o));
  for(const o of objects){
   const name=sourceName(o);
-  if(name==='Compact keyboard')add(o,'Keyboard');
+  if(name==='TELEDOG speaker')add(o,'Speaker');
+  else if(name==='Compact keyboard')add(o,'Keyboard');
   else if(/^Shelf Teledog \d+ .*Character turntable/.test(name))add(o,'Toy');
   else if(/^Packaged shelf toy \d+ .*Character turntab/.test(name))add(o,'Toy');
   else if(name==='Counter mascot Display 1-1 Character turntable')add(o,'Toy');
