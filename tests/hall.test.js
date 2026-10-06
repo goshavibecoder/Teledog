@@ -38,12 +38,12 @@ test('published gallery parses as real geometry with glass and an unobstructed d
  const bounds=new THREE.Box3().setFromObject(g.scene);
  assert.ok(bounds.max.x>6.5&&bounds.max.y>=2.5);
  registerGalleryStories(g.scene);
- // A tap just above FAST's head lands on the glass, not its thin quills.
+ // Glass does not select FAST; only a ray reaching its sculpture does.
  for(const y of [1.1,1.5]){
   const tap=new THREE.Raycaster(new THREE.Vector3(4.32,1.3,0),new THREE.Vector3(.08,y-1.3,1).normalize());
   const hits=tap.intersectObject(g.scene,true);
   assert.equal(hits[0].object.name,'Hall_ShowcaseGlass');
-  assert.equal(galleryCharacterAt(hits),CHARACTERS.fast);
+  assert.equal(galleryCharacterAt(hits),y===1.1?CHARACTERS.fast:null);
  }
  // The wall still blocks a tap from outside the hall.
  const blocked=new THREE.Raycaster(new THREE.Vector3(4.4,1.3,3),new THREE.Vector3(0,0,-1));
@@ -55,6 +55,16 @@ test('gallery threshold fills only the gap and the floor uses stable opaque shad
  globalThis.fetch=async url=>new Response(url.includes('clown-head')?fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)):url.includes('groyper_green')?texturelessFrog():fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
  try{
   const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
+  registerGalleryStories(hall);
+  for(const [x,id] of [[2.86,'groyper'],[4.4,'fast']]){
+   const tap=new THREE.Raycaster(new THREE.Vector3(x,1.3,0),new THREE.Vector3(0,-.2,.99).normalize());
+   assert.equal(galleryCharacterAt(tap.intersectObject(room,true)),CHARACTERS[id]);
+  }
+  // This diagonal ray crosses GROYPER's empty glass before hitting FAST.
+  const diagonal=new THREE.Raycaster(new THREE.Vector3(2,1.3,0),new THREE.Vector3(2.4,-.2,.99).normalize());
+  const diagonalHits=diagonal.intersectObject(room,true);
+  assert.ok(diagonalHits.some(h=>h.object.name.startsWith('Frog glass')));
+  assert.equal(galleryCharacterAt(diagonalHits),CHARACTERS.fast);
   assert.equal(hall.getObjectByName('Clown rear neck connection'),undefined);
   const roofs=hall.children.filter(o=>o.name==='Stable showcase roof');assert.equal(roofs.length,4);
   assert.ok(roofs.every(o=>o.material.depthWrite===false&&o.material.polygonOffset));
