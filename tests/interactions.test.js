@@ -51,3 +51,14 @@ test('a wall blocks pickup, transparent glass does not, and distant objects cann
  assert.equal(h.itemAt([{object:mesh,distance:3}]),null);
  const parent=items[0].parent;h.take(items[0]);h.take(items[1]);assert.ok(items[0].parent===parent);h.release();
 });
+
+test('held toys face the viewer from every camera direction',()=>{
+ const {scene,camera,items}=fixture();const hands=new HandInteraction(scene,camera);
+ for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]){camera.rotation.set(.2,yaw,0,'YXZ');
+  for(const item of items.filter(o=>o.userData.pickup.label==='Игрушка')){
+   hands.take(item);scene.updateMatrixWorld(true);let head;const eyes=[];
+   item.traverse(o=>{const name=o.userData.name||o.name;if(/white head/i.test(name))head=camera.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));if(/left eye|right eye/i.test(name))eyes.push(camera.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3())));});
+   assert.ok(head&&eyes.length);const front=eyes.reduce((s,v)=>s.add(v),new THREE.Vector3()).divideScalar(eyes.length).sub(head);assert.ok(front.z>0,'Eyes must face the viewer: '+item.name);hands.release();
+  }
+ }
+});

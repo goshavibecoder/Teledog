@@ -51,9 +51,20 @@ export class HandInteraction{
   this.release();this.scene.updateMatrixWorld(true);
   const saved={item,parent:item.parent,position:item.position.clone(),quaternion:item.quaternion.clone(),scale:item.scale.clone(),materials:[],hidden:[]};
   const box=new THREE.Box3().setFromObject(item);const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+  const front=new THREE.Vector3(0,0,1);
+  if(item.userData.pickup.label==='Игрушка'){
+   let head=null;const eyes=[];item.traverse(o=>{const name=sourceName(o);
+    if(/white head/i.test(name))head=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    if(/left eye|right eye/i.test(name))eyes.push(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));
+   });
+   if(head&&eyes.length){front.copy(eyes.reduce((sum,v)=>sum.add(v),new THREE.Vector3()).divideScalar(eyes.length).sub(head));front.y=0;front.normalize();}
+  }
   const holder=new THREE.Group();this.scene.add(holder);holder.attach(item);this.rig.add(holder);
+  if(item.userData.pickup.label==='Игрушка')holder.rotation.y=-Math.atan2(front.x,front.z);
   const max=Math.max(size.x,size.y,size.z,.001),factor=Math.min(1,(item.userData.pickup.label==='Монитор'?.44:.33)/max);
-  holder.scale.setScalar(factor);holder.position.copy(center).multiplyScalar(-factor);
+  holder.scale.setScalar(factor);holder.position.copy(center).multiplyScalar(-factor).applyQuaternion(holder.quaternion);
+  this.scene.updateMatrixWorld(true);
+  const alignedCenter=this.rig.worldToLocal(new THREE.Box3().setFromObject(item).getCenter(new THREE.Vector3()));holder.position.sub(alignedCenter);
   const width=size.x*factor;this.hands.forEach((h,i)=>h.position.x=(i===0?-1:1)*Math.max(.10,width*.40));
   item.traverse(o=>{if(!o.isMesh)return;saved.materials.push({o,material:o.material,order:o.renderOrder});
    const clone=m=>{const c=m.clone();c.depthTest=false;return c;};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);o.renderOrder=1001;
