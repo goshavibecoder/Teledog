@@ -10,26 +10,18 @@ export function placeGreenFrog(model,hall){
  model.traverse(o=>{o.userData.gallery=true;});hall.add(model);return model;
 }
 async function loadCompressedModel(url){
- const response=await fetch(url);if(!response.ok)throw new Error(`Gallery asset: ${response.status}`);
- const buffer=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+ const urls=Array.isArray(url)?url:[url];
+ const responses=await Promise.all(urls.map(part=>fetch(part)));
+ for(const response of responses)if(!response.ok)throw new Error(`Gallery asset: ${response.status}`);
+ const body=responses.length===1?responses[0].body:new Blob(await Promise.all(responses.map(response=>response.arrayBuffer()))).stream();
+ const buffer=await new Response(body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
  return new GLTFLoader().parseAsync(buffer,'./assets/');
 }
-async function loadClownHead(){
- const response=await fetch('./assets/clown-head.json?v=hall27');
- if(!response.ok)throw new Error(`Clown head: ${response.status}`);
- return response.json();
-}
-export function applyClownHead(hall,head){
- // The first 1,392 vertices in the green material group form the head.
- // Keep the hands in that same group intact.
- const mesh=hall.getObjectByName('Hall_Green')||hall.getObjectByName('Hall Green');
- if(!mesh?.isMesh)throw new Error('Clown head mesh is missing');
- for(const [attribute,values] of [['position',head.positions],['normal',head.normals]]){
-  const buffer=mesh.geometry.getAttribute(attribute);
-  if(values.length!==1392*3||buffer.array.length<values.length)throw new Error('Invalid clown head geometry');
-  buffer.array.set(values);buffer.needsUpdate=true;
- }
- mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
+export function replaceClown(hall,model){
+ // The baked hall export groups the original clown into material nodes 27–42.
+ for(const mesh of hall.children.slice(27,43))mesh.visible=false;
+ model.name='Reference clown statue';model.userData.gallery=true;
+ model.traverse(o=>{o.userData.gallery=true;});hall.add(model);return model;
 }
 export function revealFrogGlass(hall){
  const glass=hall.getObjectByName('Hall_ShowcaseGlass')||hall.getObjectByName('Hall ShowcaseGlass');
@@ -53,8 +45,8 @@ export function revealFrogGlass(hall){
  return enclosure;
 }
 export async function addHall(room){
- const [gltf,frog,head]=await Promise.all([loadCompressedModel('./assets/hall.glb.gz?v=hall24'),loadCompressedModel('./assets/groyper_green.glb.gz?v=hall23'),loadClownHead()]);
- const hall=gltf.scene;applyClownHead(hall,head);hall.name='TELEDOG statue gallery';hall.userData.gallery=true;
+ const [gltf,frog,clown]=await Promise.all([loadCompressedModel('./assets/hall.glb.gz?v=hall24'),loadCompressedModel('./assets/groyper_green.glb.gz?v=hall23'),loadCompressedModel(Array.from({length:7},(_,i)=>`./assets/clown.glb.gz.part${i+1}?v=hall28`))]);
+ const hall=gltf.scene;replaceClown(hall,clown.scene);hall.name='TELEDOG statue gallery';hall.userData.gallery=true;
  hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallBase'){
   const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++)if(Math.abs(positions.getY(i)-.24)<1e-6)positions.setY(i,.2415);positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
  }if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
