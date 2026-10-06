@@ -15,7 +15,7 @@ async function loadCompressedModel(url){
  return new GLTFLoader().parseAsync(buffer,'./assets/');
 }
 async function loadClownHead(){
- const response=await fetch('./assets/clown-head.json?v=hall30');
+ const response=await fetch('./assets/clown-head.json?v=hall31');
  if(!response.ok)throw new Error(`Clown head: ${response.status}`);
  return response.json();
 }
@@ -53,6 +53,34 @@ export function fixClownBrows(hall){
   p.needsUpdate=true;mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
  }
 }
+export function stabilizeShowcaseRoofs(hall){
+ const glass=hall.getObjectByName('Hall_ShowcaseGlass')||hall.getObjectByName('Hall ShowcaseGlass');
+ const source=glass.geometry,index=source.getIndex(),p=source.getAttribute('position');
+ const keep=[],roofs=new Map(),upperLevels=[.988,1.648,1.868,2.208];
+ for(let i=0;i<index.count;i+=3){
+  const ids=[index.getX(i),index.getX(i+1),index.getX(i+2)];
+  const ys=ids.map(v=>p.getY(v)),horizontal=Math.max(...ys)-Math.min(...ys)<1e-6;
+  if(horizontal&&ys[0]>.95){
+   if(upperLevels.some(y=>Math.abs(y-ys[0])<1e-5)){
+    const xs=ids.map(v=>p.getX(v)),zs=ids.map(v=>p.getZ(v));
+    const bounds=[Math.min(...xs),Math.max(...xs),Math.min(...zs),Math.max(...zs),ys[0]];
+    // Each rectangular top consists of two triangles with the same bounds.
+    roofs.set(bounds.map(v=>v.toFixed(4)).join(','),bounds);
+   }
+  }else keep.push(...ids);
+ }
+ glass.geometry=source.clone();glass.geometry.setIndex(keep);
+ const material=glass.material.clone();material.opacity=.12;material.transparent=true;material.depthWrite=false;material.side=THREE.DoubleSide;
+ material.polygonOffset=true;material.polygonOffsetFactor=1;material.polygonOffsetUnits=1;
+ for(const [xmin,xmax,zmin,zmax,y] of roofs.values()){
+  // The frog's dedicated cap already replaces this roof.
+  if(xmax<3.62&&zmin>.51)continue;
+  const roof=new THREE.Mesh(new THREE.PlaneGeometry(xmax-xmin,zmax-zmin),material);
+  roof.name='Stable showcase roof';roof.rotation.x=-Math.PI/2;
+  roof.position.set((xmin+xmax)/2,y+.002,(zmin+zmax)/2);roof.renderOrder=3;roof.userData.gallery=true;hall.add(roof);
+ }
+ return roofs.size;
+}
 export function revealFrogGlass(hall){
  const glass=hall.getObjectByName('Hall_ShowcaseGlass')||hall.getObjectByName('Hall ShowcaseGlass');
  if(!glass?.isMesh)throw new Error('Showcase glass is missing');
@@ -65,7 +93,7 @@ export function revealFrogGlass(hall){
  // Five explicit panels form a cap over the frog: front, rear, sides and roof.
  const enclosure=new THREE.Group();enclosure.name='Green frog showcase glass';enclosure.userData.gallery=true;
  const width=1.51,height=1.408,depth=.95,center=new THREE.Vector3(2.86,.944,.99);
- const material=new THREE.MeshStandardMaterial({color:0xc4e8f2,transparent:true,opacity:.23,roughness:.055,metalness:.12,envMapIntensity:1.8,depthWrite:false,side:THREE.DoubleSide});
+ const material=new THREE.MeshStandardMaterial({color:0xc4e8f2,transparent:true,opacity:.23,roughness:.055,metalness:.12,envMapIntensity:1.8,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
  function panel(name,w,h,x,y,z,rx=0,ry=0){
   const pane=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material);pane.name=name;
   pane.position.set(x,y,z);pane.rotation.set(rx,ry,0);pane.renderOrder=3;pane.userData.gallery=true;enclosure.add(pane);return pane;
@@ -92,7 +120,7 @@ export async function addHall(room){
  hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallBase'){
   const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++)if(Math.abs(positions.getY(i)-.24)<1e-6)positions.setY(i,.2415);positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
  }if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
- revealFrogGlass(hall);
+ stabilizeShowcaseRoofs(hall);revealFrogGlass(hall);
  placeGreenFrog(frog.scene,hall);
  room.add(hall);
  // The original floor ends at the open right side; bridge it to the doorway.

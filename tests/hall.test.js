@@ -44,6 +44,8 @@ test('gallery threshold fills only the gap and the floor uses stable opaque shad
  try{
   const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
   assert.equal(hall.getObjectByName('Clown rear neck connection'),undefined);
+  const roofs=hall.children.filter(o=>o.name==='Stable showcase roof');assert.equal(roofs.length,4);
+  assert.ok(roofs.every(o=>o.material.depthWrite===false&&o.material.polygonOffset));
   const enclosure=hall.getObjectByName('Green frog showcase glass');assert.ok(enclosure?.isGroup);assert.equal(enclosure.children.length,5);assert.ok(enclosure.children.every(p=>p.material.depthWrite===false&&p.material.opacity>=.2));
   const glassBounds=new THREE.Box3().setFromObject(enclosure);assert.ok(glassBounds.min.x<2.18&&glassBounds.max.x>3.54);assert.ok(glassBounds.min.z<.72&&glassBounds.max.z>1.25);assert.ok(glassBounds.max.y>1.53);
   const clown=hall.getObjectByName('Hall_Green');assert.equal(clown.material.transparent,false);assert.equal(clown.material.opacity,1);assert.equal(clown.material.depthWrite,true);const head=JSON.parse(fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)));
