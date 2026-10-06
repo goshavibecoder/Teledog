@@ -16,3 +16,5 @@
 #error-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(85vw,350px);background:#102c46e8;border-radius:20px;padding:20px;font-size:14px;line-height:1.5;z-index:20}
 #error-panel button{display:block;margin-top:14px}
 @media(prefers-reduced-motion:reduce){#loading-dot{animation:none}}
+
+#take-item{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom))}
