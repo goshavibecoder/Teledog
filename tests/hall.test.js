@@ -40,16 +40,13 @@ test('published gallery parses as real geometry with glass and an unobstructed d
 
 test('gallery threshold fills only the gap and the floor uses stable opaque shading',async()=>{
  const originalFetch=globalThis.fetch;
- globalThis.fetch=async url=>new Response(url.includes('clown.glb')?fs.readFileSync(new URL('../assets/clown.glb.gz.part'+url.match(/part(\d+)/)[1],import.meta.url)):url.includes('groyper_green')?texturelessFrog():fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
+ globalThis.fetch=async url=>new Response(url.includes('clown-head')?fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)):url.includes('groyper_green')?texturelessFrog():fs.readFileSync(new URL('../assets/hall.glb.gz',import.meta.url)));
  try{
   const room=new THREE.Group();const hall=await addHall(room);room.updateMatrixWorld(true);
   assert.equal(hall.getObjectByName('Clown rear neck connection'),undefined);
   const enclosure=hall.getObjectByName('Green frog showcase glass');assert.ok(enclosure?.isMesh);assert.equal(enclosure.material.depthWrite,false);assert.ok(enclosure.material.opacity>=.12);
-  const clown=hall.getObjectByName('Reference clown statue');assert.ok(clown);assert.equal(hall.getObjectByName('Hall_Green').visible,false);
-  const clownBounds=new THREE.Box3().setFromObject(clown,true);
-  assert.ok(clownBounds.min.x>3.75&&clownBounds.max.x<5.05);
-  assert.ok(clownBounds.min.z>-1.46&&clownBounds.max.z<-.52);
-  assert.ok(clownBounds.min.y>.24&&clownBounds.max.y<1.86);
+  const clown=hall.getObjectByName('Hall_Green');assert.equal(clown.material.transparent,false);assert.equal(clown.material.opacity,1);assert.equal(clown.material.depthWrite,true);const head=JSON.parse(fs.readFileSync(new URL('../assets/clown-head.json',import.meta.url)));
+  assert.deepEqual(Array.from(clown.geometry.getAttribute('position').array.slice(0,1392*3)),Array.from(new Float32Array(head.positions)));
   const bridge=hall.getObjectByName('Gallery threshold');const box=new THREE.Box3().setFromObject(bridge);
   assert.ok(box.min.x>=1.68-1e-7&&box.max.x<=1.70+1e-7);
   const pedestalTop=hall.getObjectByName('Hall_HallBase');

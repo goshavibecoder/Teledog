@@ -3,15 +3,15 @@ import sys
 import numpy as np
 from pxr import Usd,UsdGeom,UsdShade,UsdLux,UsdUtils,Sdf,Gf,Vt
 # Pass the work root containing usdz-work/ and output/.
-root=Path(sys.argv[1]);stage=Usd.Stage.CreateNew(str(root/'usdz-work/frog.usdc'));UsdGeom.SetStageUpAxis(stage,UsdGeom.Tokens.y);UsdGeom.SetStageMetersPerUnit(stage,1);model=UsdGeom.Xform.Define(stage,'/FrogClown');stage.SetDefaultPrim(model.GetPrim());model.GetPrim().SetDisplayName('Rainbow frog clown, raised fists');stage.SetMetadata('comment','Volumetric sculpt based on the supplied frog clown reference. Rounded reference silhouette with raised fists and two stylized holstered pistols.')
+root=Path(sys.argv[1]);stage=Usd.Stage.CreateNew(str(root/'usdz-work/frog.usdc'));UsdGeom.SetStageUpAxis(stage,UsdGeom.Tokens.y);UsdGeom.SetStageMetersPerUnit(stage,1);model=UsdGeom.Xform.Define(stage,'/FrogClown');stage.SetDefaultPrim(model.GetPrim());model.GetPrim().SetDisplayName('Rainbow frog clown, arms down');stage.SetMetadata('comment','Volumetric sculpt based on the supplied frog clown reference. Standing pose with both arms down, without the unicycle.')
 preview=[];preview_names=[]
 def mat(name,color,rough=.35):
  m=UsdShade.Material.Define(stage,'/FrogClown/Materials/'+name);s=UsdShade.Shader.Define(stage,str(m.GetPath())+'/Surface');s.CreateIdAttr('UsdPreviewSurface');s.CreateInput('diffuseColor',Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*color));s.CreateInput('roughness',Sdf.ValueTypeNames.Float).Set(rough);m.CreateSurfaceOutput().ConnectToSource(s.ConnectableAPI(),'surface');return m,color
-colors={name:mat(name,col,r) for name,col,r in [('Green',(.21,.43,.105),.36),('GreenDark',(.065,.17,.035),.5),('Blue',(.008,.025,.82),.26),('White',(.96,.99,.94),.21),('Black',(.003,.005,.003),.23),('Lip',(.60,.17,.025),.34),('Grey',(.28,.31,.32),.33),('MetalDark',(.10,.12,.13),.38),('Holster',(.20,.15,.08),.5),('Mouth',(.10,.035,.008),.52),('Nose',(.98,.006,.004),.15),('Bow',(.48,.81,.96),.3),('Dot',(.82,.94,1.),.3),('Red',(1,.01,.03),.43),('Orange',(1,.23,.008),.43),('Yellow',(1,.88,.02),.43),('WigGreen',(.015,.60,.025),.43),('WigBlue',(.035,.17,.99),.43),('Purple',(.50,.035,.52),.43)]}
+colors={name:mat(name,col,r) for name,col,r in [('Green',(.21,.43,.105),.36),('GreenDark',(.065,.17,.035),.5),('Blue',(.008,.025,.82),.26),('White',(.96,.99,.94),.21),('Black',(.003,.005,.003),.23),('Lip',(.48,.16,.065),.34),('Mouth',(.10,.035,.008),.52),('Nose',(.98,.006,.004),.15),('Bow',(.48,.81,.96),.3),('Dot',(.82,.94,1.),.3),('Red',(1,.01,.03),.43),('Orange',(1,.23,.008),.43),('Yellow',(1,.88,.02),.43),('WigGreen',(.015,.60,.025),.43),('WigBlue',(.035,.17,.99),.43),('Purple',(.50,.035,.52),.43)]}
 def mesh(name,p,f,n,col):
  p=np.asarray(p,dtype=np.float32);f=np.asarray(f,dtype=np.int32);n=np.asarray(n,dtype=np.float32);g=UsdGeom.Mesh.Define(stage,'/FrogClown/Geometry/'+name);g.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(p));g.CreateFaceVertexCountsAttr(Vt.IntArray.FromNumpy(np.full(len(f)//3,3,dtype=np.int32)));g.CreateFaceVertexIndicesAttr(Vt.IntArray.FromNumpy(f));g.CreateNormalsAttr(Vt.Vec3fArray.FromNumpy(n));g.SetNormalsInterpolation('vertex');g.CreateSubdivisionSchemeAttr('none');g.CreateExtentAttr([Gf.Vec3f(*map(float,p.min(0))),Gf.Vec3f(*map(float,p.max(0)))]);UsdShade.MaterialBindingAPI.Apply(g.GetPrim()).Bind(colors[col][0]);preview.append((p,f.reshape(-1,3),colors[col][1]));preview_names.append(name)
 def ell(name,c,r,col,tilt=0):
- p=[];n=[];f=[];nu=24;nv=16;a=np.radians(tilt);rot=np.array([[np.cos(a),-np.sin(a),0],[np.sin(a),np.cos(a),0],[0,0,1]])
+ p=[];n=[];f=[];nu=48;nv=28;a=np.radians(tilt);rot=np.array([[np.cos(a),-np.sin(a),0],[np.sin(a),np.cos(a),0],[0,0,1]])
  for j in range(nv+1):
   ph=np.pi*j/nv
   for i in range(nu+1):
@@ -56,45 +56,27 @@ def pillow(name,outline,center,z,depth,col):
   normal=np.cross(p[face[1]]-p[face[0]],p[face[2]]-p[face[0]])
   for v in face:n[v]+=normal
  n/=np.maximum(1e-9,np.linalg.norm(n,axis=1,keepdims=True));mesh(name,p,f,n,col)
-def bar(name,a,b,width,depth,z,col):
- a=np.array(a);b=np.array(b);d=b-a;u=np.array([-d[1],d[0]])/np.linalg.norm(d)*width/2
- corners=[a-u,a+u,b+u,b-u];verts=np.array([[x,y,zz] for zz in [z-depth/2,z+depth/2] for x,y in corners]);p=[];n=[];f=[]
- for quad in [(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]:
-  v=verts[list(quad)];normal=np.cross(v[1]-v[0],v[2]-v[0]);normal/=np.linalg.norm(normal);offset=len(p);p.extend(v);n.extend([normal]*4);f.extend([offset,offset+1,offset+2,offset,offset+2,offset+3])
- mesh(name,p,f,n,col)
 # Single broad pear-shaped suit and cheek-heavy head, without detached cheek balls.
 pillow('SuitTorso',[(-.275,1.08),(-.355,.98),(-.405,.76),(-.38,.58),(-.25,.445),(0,.42),(.25,.445),(.38,.58),(.405,.76),(.355,.98),(.275,1.08)],(0,.78),0,.350,'Blue')
-pillow('Head',[(-.28,1.08),(-.37,1.17),(-.38,1.32),(-.34,1.46),(-.20,1.56),(.05,1.58),(.29,1.51),(.43,1.36),(.46,1.20),(.37,1.09),(.12,1.065),(-.10,1.065)],(0,1.30),.025,.325,'Green')
+pillow('Head',[(-.20,1.095),(-.35,1.16),(-.425,1.29),(-.385,1.435),(-.255,1.545),(0,1.585),(.255,1.545),(.375,1.435),(.415,1.29),(.34,1.16),(.20,1.095),(0,1.06)],(0,1.30),.025,.325,'Green')
 for side in [-1,1]:
  tag='Left' if side<0 else 'Right'
  # Shaped solid pant legs with soft knees, broad ankles and chunky shoes.
- outline=[(side*(.10+x),y) for x,y in [(0,.47),(.087,.46),(.072,.30),(.100,.18),(.102,.07),(.030,.07),(.012,.20),(-.015,.34)]]
+ outline=[(side*(.10+x),y) for x,y in [(0,.50),(.12,.49),(.135,.35),(.11,.24),(.10,.09),(.005,.09),(-.013,.24),(-.005,.36)]]
  pillow(tag+'PantLeg',outline,(side*.16,.28),-.002,.095,'Blue')
- ell(tag+'AnkleCuff',(side*.16,.105,.007),(.053,.026,.065),'Blue')
- ell(tag+'Shoe',(side*.178,.062,.100),(.117,.048,.154),'Blue')
- ell(tag+'Sole',(side*.178,.022,.100),(.118,.014,.155),'Blue')
- # Arms curve outward and rise into compact, clenched green fists.
- path=[(side*x,y,z) for x,y,z in [( .35,.995,-.015),(.445,1.005,-.010),(.535,1.075,.005),(.60,1.17,.012)]]
- from scipy.interpolate import CubicSpline
- curve=CubicSpline(np.arange(len(path)),np.array(path))
- tube(tag+'Sleeve',curve(np.linspace(0,3,36)),.043,'Blue')
- ell(tag+'Cuff',(side*.605,1.18,.016),(.047,.033,.042),'Blue',side*-30)
- ell(tag+'Fist',(side*.627,1.244,.022),(.064,.069,.055),'Green',side*12)
+ ell(tag+'AnkleCuff',(side*.16,.105,.007),(.083,.042,.090),'Blue')
+ ell(tag+'Shoe',(side*.178,.062,.100),(.128,.068,.176),'Blue')
+ ell(tag+'Sole',(side*.178,.022,.100),(.130,.022,.177),'Blue')
+ path=[(side*(.315+.130*np.sin(t*np.pi/2)),1.02-.47*t,.012+.015*t) for t in np.linspace(0,1,40)]
+ tube(tag+'Sleeve',path,.070,'Blue')
+ ell(tag+'Cuff',(side*.445,.563,.026),(.072,.026,.066),'Blue')
+ ell(tag+'Palm',(side*.450,.512,.036),(.067,.078,.058),'Green',side*7)
  for finger in range(3):
-  ell(tag+'Knuckle'+str(finger),(side*(.603+.024*finger),1.265,.065),(.022,.031,.020),'Green')
- tube(tag+'CurledThumb',[(side*.589,1.25,.055),(side*.603,1.224,.081),(side*.633,1.226,.082)],.019,'Green')
- for finger in range(2):
-  tube(tag+'FingerCrease'+str(finger),[(side*(.610+.025*finger),1.255,.083),(side*(.611+.025*finger),1.237,.084)],.0035,'GreenDark')
- # Grey toy-like pistols stay in their brown side holsters, as in the reference.
- def sidepart(name,outline,center,z,depth,col):
-  outline=[(side*x,y) for x,y in outline];pillow(tag+name,outline,(side*center[0],center[1]),z,depth,col)
- sidepart('Holster',[(.35,.82),(.43,.82),(.465,.69),(.418,.60),(.365,.65)],(.404,.71),.03,.05,'Holster')
- bar(tag+'PistolSlide',(side*.415,.725),(side*.58,.37),.039,.030,.095,'Grey')
- sidepart('PistolGrip',[(.397,.756),(.428,.715),(.391,.662),(.356,.718)],(.395,.708),.072,.032,'MetalDark')
- tube(tag+'TriggerGuard',[(side*.438,.706,.108),(side*.476,.672,.108),(side*.464,.640,.108),(side*.421,.670,.108)],.006,'Grey')
- tube(tag+'SlideHighlight',[(side*.430,.718,.110),(side*.570,.400,.110)],.006,'Grey')
+  x=side*(.420+.029*finger);length=.102-.015*abs(finger-1)
+  tube(tag+'Finger'+str(finger),[(x,.486,.043),(x+side*.008,.449,.061),(x+side*.014,.486-length,.080)],.020,'Green')
+ tube(tag+'Thumb',[(side*.413,.542,.053),(side*.382,.513,.077),(side*.384,.484,.086)],.022,'Green')
  # Almond eye whites with sculpted eyelids and multiple folds.
- ex=side*.145-.055;ey=1.441
+ ex=side*.165;ey=1.441
  outline=[(ex-.147,ey+.005),(ex-.096,ey+.064),(ex-.010,ey+.081),(ex+.091,ey+.060),(ex+.146,ey+.004),(ex+.095,ey-.039),(ex-.013,ey-.049),(ex-.098,ey-.036)]
  pillow(tag+'EyeWhite',outline,(ex,ey),.281,.046,'White')
  ell(tag+'Pupil',(ex+side*.011,ey+.006,.321),(.060,.064,.018),'Black')
@@ -106,8 +88,8 @@ for side in [-1,1]:
  for i in range(2):tube(tag+'CheekCrease'+str(i),[(side*(.30+.04*t),1.387-.020*i-.009*t,.230+.008*t) for t in np.linspace(0,1,12)],.006,'GreenDark')
 # Full lower lip, upper lip and a recessed smile gap below the round clown nose.
 for name,offset,radius,col in [('LowerLip',-.017,.031,'Lip'),('UpperLip',.025,.024,'Lip'),('Smile',.004,.008,'Mouth')]:
- tube(name,[(x-.055,1.216+offset+.065*(x/.245)**2,.295-.040*(x/.245)**2) for x in np.linspace(-.245,.245,61)],radius,col)
-ell('RedClownNose',(-.055,1.332,.338),(.088,.088,.085),'Nose')
+ tube(name,[(x,1.216+offset+.065*(x/.245)**2,.295-.040*(x/.245)**2) for x in np.linspace(-.245,.245,61)],radius,col)
+ell('RedClownNose',(0,1.332,.338),(.088,.088,.085),'Nose')
 # Move the face with the fuller head, keeping the eyes and lips above the skin.
 face_parts=['EyeWhite','Pupil','Catchlight','UpperLidFold','LowerLid','CheekCrease','LowerLip','UpperLip','Smile','RedClownNose']
 for i,name in enumerate(preview_names):
@@ -124,7 +106,7 @@ for side in [-1,1]:
 ell('BowKnot',(0,1.060,.297),(.036,.040,.034),'Bow')
 ell('BowKnotDot',(-.009,1.063,.332),(.008,.008,.003),'Dot')
 # Rounded rainbow bands, facing forward and running over the crown toward the back.
-for band,(x,col) in enumerate(zip([-.355,-.255,-.135,.008,.154,.295],['Purple','WigBlue','WigGreen','Yellow','Orange','Red'])):
+for band,(x,col) in enumerate(zip([-.355,-.255,-.135,.008,.154,.295],['Red','Orange','Yellow','WigGreen','WigBlue','Purple'])):
  crown=1.62+.105*np.sqrt(max(0,1-(x/.39)**2));width=.104 if band not in [0,5] else .084
  # Front scallops overlap into six continuous coloured strips.
  for curl in range(3):
@@ -143,6 +125,14 @@ for i, name in enumerate(preview_names):
  p,f,c=preview[i]
  p,n=round_mesh(p,np.asarray(g.GetNormalsAttr().Get()))
  if name=='Head':p,n=join_head_mesh(p,n)
+ if 'UpperLidFold1' in name or 'UpperLidFold2' in name:
+  fold=1 if 'UpperLidFold1' in name else 2
+  center=(-.165 if name.startswith('Left') else .165)*1.08
+  p[:,0]=center+(p[:,0]-center)*.88
+  p[:,1]-=.019 if fold==1 else .038
+  p[:,2]+=.055 if fold==1 else .080
+  n[:,0]/=.88;n/=np.maximum(np.linalg.norm(n,axis=1,keepdims=True),1e-12)
+ if name.startswith('Hair'):p[:,1]+=.065
  g.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(p))
  g.GetNormalsAttr().Set(Vt.Vec3fArray.FromNumpy(n))
  g.GetExtentAttr().Set([Gf.Vec3f(*map(float,p.min(0))),Gf.Vec3f(*map(float,p.max(0)))])
