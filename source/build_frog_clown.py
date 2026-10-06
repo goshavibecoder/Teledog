@@ -118,6 +118,17 @@ for band,(x,col) in enumerate(zip([-.355,-.255,-.135,.008,.154,.295],['Red','Ora
    ell('HairTemple'+str(band)+str(curl),(x*1.08,1.53-.083*curl,.107),(.077,.089,.096),col)
    ell('HairTempleRear'+str(band)+str(curl),(x*1.08,1.53-.083*curl,-.057),(.077,.089,.096),col)
 # Rear hair mirrors the front across the head centre; the lower rear head stays green.
+# Keep the entire sculpt attached while rounding the belly, cheeks and wig.
+from round_clown import round_mesh
+for i, name in enumerate(preview_names):
+ g=UsdGeom.Mesh.Get(stage,'/FrogClown/Geometry/'+name)
+ p,f,c=preview[i]
+ p,n=round_mesh(p,np.asarray(g.GetNormalsAttr().Get()))
+ g.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(p))
+ g.GetNormalsAttr().Set(Vt.Vec3fArray.FromNumpy(n))
+ g.GetExtentAttr().Set([Gf.Vec3f(*map(float,p.min(0))),Gf.Vec3f(*map(float,p.max(0)))])
+ preview[i]=(p,f,c)
+
 UsdLux.DomeLight.Define(stage,'/FrogClown/Lighting/Ambient').CreateIntensityAttr(300)
 light=UsdLux.DistantLight.Define(stage,'/FrogClown/Lighting/Key');light.CreateIntensityAttr(1500);light.CreateAngleAttr(20);UsdGeom.Xformable(light).AddRotateXYZOp().Set(Gf.Vec3f(-25,-35,0))
 stage.GetRootLayer().Save();out=root/'output/Frog_Clown_Arms_Down.usdz';assert UsdUtils.CreateNewUsdzPackage(Sdf.AssetPath(str(root/'usdz-work/frog.usdc')),str(out))

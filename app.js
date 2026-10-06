@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js?v=hall23';
-import {addHall} from './hall.js?v=hall23';
+import {addHall} from './hall.js?v=hall24';
 import {addXLogo} from './x-logo.js';
 import {repairSeatedDog} from './seated-repair.js?v=repair16';
 import {createRoomSounds} from './room-sounds.js?v=repair16';
