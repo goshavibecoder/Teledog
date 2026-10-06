@@ -4,11 +4,12 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {createRoomSounds} from './room-sounds.js?v=sounds15';
-import {addSpeaker} from './speaker.js?v=sounds15';
-import {createSpeakerPlayer} from './speaker-player.js?v=sounds15';
-import {fixRoomVisuals} from './visual-fixes.js?v=sounds15';
-import {registerItems,HandInteraction} from './interactions.js?v=sounds15';
+import {repairSeatedDog} from './seated-repair.js?v=repair16';
+import {createRoomSounds} from './room-sounds.js?v=repair16';
+import {addSpeaker} from './speaker.js?v=repair16';
+import {createSpeakerPlayer} from './speaker-player.js?v=repair16';
+import {fixRoomVisuals} from './visual-fixes.js?v=repair16';
+import {registerItems,HandInteraction} from './interactions.js?v=repair16';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -42,13 +43,13 @@ function loadRoom(onLoad,onProgress,onError){
  }).catch(onError);
 }
 loadRoom(g=>{
- room=g.scene;scene.add(room);addXLogo(room);const speaker=addSpeaker(room);speakerPlayer=createSpeakerPlayer(speaker,{onPickup:()=>{if(!walk)setWalk();hands.take(speaker);}});mixer=new THREE.AnimationMixer(room);
+ room=g.scene;scene.add(room);repairSeatedDog(room);addXLogo(room);const speaker=addSpeaker(room);speakerPlayer=createSpeakerPlayer(speaker,{onPickup:()=>{if(!walk)setWalk();hands.take(speaker);}});mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;
  window.teledog={room,mixer,camera,controls,setWalk,logoLink,hands};
 },e=>{if(e.total){progress.textContent=Math.min(99,Math.round(e.loaded/e.total*100))+'%';}},e=>{console.error('Room loading failed',e);showError('The room could not load. Please try again.');});
-function overview(){hands.release();sounds.update(0);walk=false;camera.fov=38;camera.updateProjectionMatrix();$('#mode-switch').textContent='First person';$('#mode-switch').setAttribute('aria-pressed','false');$('#crosshair').hidden=true;controls.enabled=true;camera.position.set(4.5,3.4,6.0);controls.target.set(-.2,.98,0);controls.update();$('#joystick').hidden=true;$('#move-buttons').hidden=true;$('#overview').classList.add('active');$('#walk').classList.remove('active');$('#mode-label').textContent='3D SHOWROOM';keys.clear();stickVector={forward:0,right:0};}
+function overview(){hands.release();walk=false;camera.fov=38;camera.updateProjectionMatrix();$('#mode-switch').textContent='First person';$('#mode-switch').setAttribute('aria-pressed','false');$('#crosshair').hidden=true;controls.enabled=true;camera.position.set(4.5,3.4,6.0);controls.target.set(-.2,.98,0);controls.update();$('#joystick').hidden=true;$('#move-buttons').hidden=true;$('#overview').classList.add('active');$('#walk').classList.remove('active');$('#mode-label').textContent='3D SHOWROOM';keys.clear();stickVector={forward:0,right:0};}
 function setWalk(){if(!room)return;walk=true;camera.fov=55;camera.updateProjectionMatrix();$('#mode-switch').textContent='Overview';$('#mode-switch').setAttribute('aria-pressed','true');$('#crosshair').hidden=false;controls.enabled=false;camera.position.set(-.72,1.30,1.03);const target=new THREE.Vector3(.64,1.18,-.87).sub(camera.position);yaw=Math.atan2(-target.x,-target.z);pitch=Math.atan2(target.y,Math.hypot(target.x,target.z));camera.rotation.set(pitch,yaw,0,'YXZ');$('#joystick').hidden=false;$('#move-buttons').hidden=false;$('#overview').classList.remove('active');$('#walk').classList.add('active');$('#mode-label').textContent='WALK AROUND';}
 enter.onclick=()=>{if(!room)return;entered=true;document.body.classList.add('entered');$('#toolbar').hidden=false;overview();if(reduced)waveActions.forEach(a=>a.reset().setLoop(THREE.LoopOnce,1).play());toast('Welcome! Tap the logos on the wall.');};
 $('#overview').onclick=overview;$('#walk').onclick=setWalk;$('#wave').onclick=()=>{waveActions.forEach(a=>{a.setLoop(reduced?THREE.LoopOnce:THREE.LoopRepeat,reduced?1:Infinity);a.reset().play();});toast('Hello from Teledog 👋');};
@@ -76,4 +77,4 @@ joy.addEventListener('pointerdown',e=>{joyId=e.pointerId;joy.setPointerCapture(e
 for(const b of document.querySelectorAll('[data-move]')){b.addEventListener('pointerdown',e=>{moveButton=b.dataset.move;b.setPointerCapture(e.pointerId);});b.addEventListener('pointerup',()=>moveButton=null);b.addEventListener('pointercancel',()=>moveButton=null);}
 window.addEventListener('keydown',e=>{if(walk&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.add(e.code);}if(e.code==='KeyE'&&walk){if(hands.held)hands.release();else {const t=targetAt(innerWidth/2,innerHeight/2);if(t?.item)hands.take(t.item);}}if(e.code==='Escape')overview();});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();resetStick();moveButton=null;pendingPointer=null;});document.addEventListener('visibilitychange',()=>clock.getDelta());
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);if(document.hidden)return;if(mixer)mixer.update(dt);if(speakerPlayer)speakerPlayer.update(dt);if(walk){const forward=stickVector.forward+(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)+(moveButton==='forward'?1:0)-(moveButton==='back'?1:0),right=stickVector.right+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+(moveButton==='right'?1:0)-(moveButton==='left'?1:0);const p=slideMove(camera.position,movement(yaw,forward,right,dt));const travelled=Math.hypot(p.x-camera.position.x,p.z-camera.position.z);camera.position.x=p.x;camera.position.z=p.z;sounds.update(travelled);hands.update(dt,travelled>.0001);}else controls.update();renderer.render(scene,camera);hands.render(renderer);});
+renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);if(document.hidden)return;if(mixer)mixer.update(dt);if(speakerPlayer)speakerPlayer.update(dt);if(walk){const forward=stickVector.forward+(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)+(moveButton==='forward'?1:0)-(moveButton==='back'?1:0),right=stickVector.right+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+(moveButton==='right'?1:0)-(moveButton==='left'?1:0);const p=slideMove(camera.position,movement(yaw,forward,right,dt));const travelled=Math.hypot(p.x-camera.position.x,p.z-camera.position.z);camera.position.x=p.x;camera.position.z=p.z;hands.update(dt,travelled>.0001);}else controls.update();renderer.render(scene,camera);hands.render(renderer);});

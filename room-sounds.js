@@ -1,5 +1,5 @@
 export function createRoomSounds({contextFactory=()=>new (window.AudioContext||window.webkitAudioContext)(),random=Math.random}={}){
- let context,master,noiseBuffer,distance=0,moving=false,left=true;
+ let context,master,noiseBuffer;
  function unlock(){
   try{
    if(!context){context=contextFactory();master=context.createGain();master.gain.value=.35;master.connect(context.destination);
@@ -21,15 +21,8 @@ export function createRoomSounds({contextFactory=()=>new (window.AudioContext||w
  }
  function play(kind,label){
   if(!context||context.state!=='running')return;
-  if(kind==='step'){noise(340+random()*170,.17,.13);thump(left?105:94,.21,.095);left=!left;}
-  else if(kind==='pickup'){noise(label==='Toy'?620:1250,.13,.085);thump(label==='Toy'?180:260,.10,.055);}
+  if(kind==='pickup'){noise(label==='Toy'?620:1250,.13,.085);thump(label==='Toy'?180:260,.10,.055);}
   else if(kind==='putback'){noise(label==='Toy'?450:850,.12,.08);thump(125,.14,.075);}
  }
- function update(travelled){
-  if(!Number.isFinite(travelled)||travelled<.0001){moving=false;distance=0;return;}
-  if(!moving){play('step');moving=true;distance=0;}
-  distance+=Math.min(travelled,.5);
-  while(distance>=.38){play('step');distance-=.38;}
- }
- return {unlock,play,update};
+ return {unlock,play};
 }
