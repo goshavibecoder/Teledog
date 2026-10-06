@@ -18,12 +18,29 @@ export function registerGalleryStories(hall){
   for(const node of nodes.slice(start,end))node.userData.galleryCharacter=CHARACTERS[id];
  }
  const frog=hall.getObjectByName('Green frog statue');if(frog)frog.userData.galleryCharacter=CHARACTERS.groyper;
+ // Each character's enclosure is clickable, including the empty space around
+ // the sculpture. The original glass mesh combines every case in one mesh.
+ hall.userData.galleryCases=[
+  ['groyper',2.10,3.62,.51,1.47,1.66],
+  ['collectible',2.39,3.11,-1.45,-.75,1.00],
+  ['fast',3.80,5.06,.51,1.47,1.88],
+  ['clown',3.74,5.00,-1.47,-.51,1.88],
+  ['teledog',5.29,6.43,-.30,.76,2.22]
+ ].map(([id,xmin,xmax,zmin,zmax,ymax])=>({record:CHARACTERS[id],bounds:new THREE.Box3(new THREE.Vector3(xmin,.23,zmin),new THREE.Vector3(xmax,ymax,zmax))}));
 }
 export function galleryCharacterAt(hits,maxDistance=3.5){
  for(const hit of hits){
   let visible=true;for(let o=hit.object;o;o=o.parent)if(!o.visible)visible=false;
   if(!visible)continue;
   if(hit.distance>maxDistance)return null;
+  if(hit.point&&/glass|showcase roof/i.test(hit.object.name)){
+   for(let o=hit.object;o;o=o.parent){
+    if(!o.userData.galleryCases)continue;
+    const point=o.worldToLocal(hit.point.clone());
+    const enclosure=o.userData.galleryCases.find(c=>c.bounds.containsPoint(point));
+    if(enclosure)return enclosure.record;
+   }
+  }
   const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];
   if(mats.every(m=>m?.transparent&&m.opacity<.4))continue;
   for(let o=hit.object;o;o=o.parent)if(o.userData.galleryCharacter)return o.userData.galleryCharacter;

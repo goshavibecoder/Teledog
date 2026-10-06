@@ -11,7 +11,7 @@ import {addSpeaker} from './speaker.js?v=repair16';
 import {createSpeakerPlayer} from './speaker-player.js?v=repair16';
 import {fixRoomVisuals} from './visual-fixes.js?v=repair16';
 import {registerItems,HandInteraction} from './interactions.js?v=stories32';
-import {registerGalleryStories,galleryCharacterAt,GalleryStories} from './gallery-stories.js?v=stories32';
+import {registerGalleryStories,galleryCharacterAt,GalleryStories} from './gallery-stories.js?v=stories33';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -63,9 +63,10 @@ $('#mode-switch').onclick=()=>walk?overview():setWalk();
 $('#put-back').onclick=()=>{stories.cancel();hands.release();};
 function targetAt(x,y){
  if(!room)return null;pointer.set(x/innerWidth*2-1,-y/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);
- const hits=hands.held?raycaster.intersectObject(hands.rig,true):[];
- if(!hits.length)hits.push(...raycaster.intersectObject(room,true));
- if(walk){const character=galleryCharacterAt(hits);if(character)return {character};}
+ const roomHits=raycaster.intersectObject(room,true);
+ if(walk){const character=galleryCharacterAt(roomHits);if(character)return {character};}
+ const heldHits=hands.held?raycaster.intersectObject(hands.rig,true):[];
+ const hits=heldHits.length?heldHits:roomHits;
  for(const hit of hits){
   const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];
   if(mats.every(m=>m?.transparent&&m.opacity<.4))continue;

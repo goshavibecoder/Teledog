@@ -8,6 +8,7 @@ registerHooks({resolve(specifier,context,next){if(specifier==='three')return {ur
 const {GLTFLoader}=await import('../vendor/examples/jsm/loaders/GLTFLoader.js');
 const {addHall,placeGreenFrog}=await import('../hall.js');
 import {isWalkable,slideMove} from '../navigation.js';
+import {registerGalleryStories,galleryCharacterAt,CHARACTERS} from '../gallery-stories.js';
 
 test('continuous doorway route enters the gallery and returns without crossing showcases',()=>{
  let p={x:1,z:.43};
@@ -36,6 +37,17 @@ test('published gallery parses as real geometry with glass and an unobstructed d
  assert.equal(ray.intersectObject(g.scene,true).length,0);
  const bounds=new THREE.Box3().setFromObject(g.scene);
  assert.ok(bounds.max.x>6.5&&bounds.max.y>=2.5);
+ registerGalleryStories(g.scene);
+ // A tap just above FAST's head lands on the glass, not its thin quills.
+ for(const y of [1.1,1.5]){
+  const tap=new THREE.Raycaster(new THREE.Vector3(4.32,1.3,0),new THREE.Vector3(.08,y-1.3,1).normalize());
+  const hits=tap.intersectObject(g.scene,true);
+  assert.equal(hits[0].object.name,'Hall_ShowcaseGlass');
+  assert.equal(galleryCharacterAt(hits),CHARACTERS.fast);
+ }
+ // The wall still blocks a tap from outside the hall.
+ const blocked=new THREE.Raycaster(new THREE.Vector3(4.4,1.3,3),new THREE.Vector3(0,0,-1));
+ assert.equal(galleryCharacterAt(blocked.intersectObject(g.scene,true)),null);
 });
 
 test('gallery threshold fills only the gap and the floor uses stable opaque shading',async()=>{

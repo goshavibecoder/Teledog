@@ -18,4 +18,4 @@
 @media(prefers-reduced-motion:reduce){#loading-dot{animation:none}}
 
 #take-item{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom))}
-
+#toast.visible{display:block!important;z-index:20}
