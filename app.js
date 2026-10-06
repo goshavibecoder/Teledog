@@ -4,10 +4,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {addSpeaker} from './speaker.js?v=music10';
-import {createSpeakerPlayer} from './speaker-player.js?v=music10';
-import {fixRoomVisuals} from './visual-fixes.js?v=music10';
-import {registerItems,HandInteraction} from './interactions.js?v=music10';
+import {addSpeaker} from './speaker.js?v=tracks11';
+import {createSpeakerPlayer} from './speaker-player.js?v=tracks11';
+import {fixRoomVisuals} from './visual-fixes.js?v=tracks11';
+import {registerItems,HandInteraction} from './interactions.js?v=tracks11';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -39,7 +39,7 @@ function loadRoom(onLoad,onProgress,onError){
  }).catch(onError);
 }
 loadRoom(g=>{
- room=g.scene;scene.add(room);addXLogo(room);speakerPlayer=createSpeakerPlayer(addSpeaker(room));mixer=new THREE.AnimationMixer(room);
+ room=g.scene;scene.add(room);addXLogo(room);const speaker=addSpeaker(room);speakerPlayer=createSpeakerPlayer(speaker,{onPickup:()=>{if(!walk)setWalk();hands.take(speaker);}});mixer=new THREE.AnimationMixer(room);
  for(const clip of g.animations){const action=mixer.clipAction(clip);if(/greeting|greet|arm/i.test(clip.name))waveActions.push(action);if(!reduced)action.play();}
  fixRoomVisuals(room);
  registerItems(room);entered=true;document.body.classList.add('entered');overview();$('#mode-switch').disabled=false;$('#loading-dot').hidden=true;
@@ -60,7 +60,7 @@ function targetAt(x,y){
   const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];
   if(mats.every(m=>m?.transparent&&m.opacity<.4))continue;
   if(hit.object.userData.speakerScreen)return {speakerPlayer:true};
-  let o=hit.object;while(o){const url=logoLink(o.name);if(url)return {url};o=o.parent;}
+  let o=hit.object;while(o){if(o.name==='TELEDOG speaker')return {speakerPlayer:true};const url=logoLink(o.name);if(url)return {url};o=o.parent;}
   break;
  }
  const item=walk?hands.itemAt(hits):null;return item?{item}:null;

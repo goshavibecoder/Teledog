@@ -1,13 +1,21 @@
 import * as THREE from './vendor/build/three.module.js';
 
-export function createSpeakerPlayer(speaker){
+export const SPEAKER_TRACKS=[
+ {title:'Свой Живой Интернет',url:'./assets/own-live-internet.mp3'},
+ {title:'Эх ВПНы Верные',url:'./assets/faithful-vpns.mp3'}
+];
+
+export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  const display=speaker.getObjectByName('Speaker mini screen');
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=320;
  const context=canvas.getContext('2d');const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  display.material.map=texture;display.material.color.set(0xffffff);display.material.needsUpdate=true;
- const audio=new Audio();audio.preload='metadata';let audioContext,analyser,data,url,title='Choose a song',error='',elapsed=1;
+ const audio=new Audio();audio.preload='metadata';let audioContext,analyser,data,url,localUrl,title='Choose a song',error='',elapsed=1;
  const panel=document.querySelector('#speaker-player'),file=document.querySelector('#speaker-file'),play=document.querySelector('#speaker-play'),status=document.querySelector('#speaker-track');
  const show=()=>{panel.hidden=false;};
+ const list=document.querySelector('#speaker-tracks');
+ for(const track of SPEAKER_TRACKS){const button=document.createElement('button');button.textContent=track.title;button.onclick=()=>selectTrack(track);list.append(button);}
+ document.querySelector('#speaker-pickup').onclick=()=>{panel.hidden=true;onPickup();};
  document.querySelector('#speaker-close').onclick=()=>{panel.hidden=true;};
  document.querySelector('#speaker-select').onclick=()=>file.click();
  function sync(){play.textContent=audio.paused?'Play':'Pause';play.disabled=!url;status.textContent=error||title;}
@@ -16,8 +24,10 @@ export function createSpeakerPlayer(speaker){
   audioContext=new (window.AudioContext||window.webkitAudioContext)();analyser=audioContext.createAnalyser();analyser.fftSize=128;data=new Uint8Array(analyser.frequencyBinCount);
   const source=audioContext.createMediaElementSource(audio);source.connect(analyser);analyser.connect(audioContext.destination);
  }
- play.onclick=async()=>{try{initialiseAudio();await audioContext.resume();if(audio.paused)await audio.play();else audio.pause();error='';}catch(e){error='Unable to play this audio file.';}sync();elapsed=1;};
- file.onchange=()=>{const selected=file.files[0];if(!selected)return;audio.pause();if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(selected);audio.src=url;title=selected.name.replace(/\.[^.]+$/,'');error='';sync();elapsed=1;};
+ async function start(){try{initialiseAudio();const resume=audioContext.resume();const playback=audio.play();await Promise.all([resume,playback]);error='';}catch(e){error='Unable to play this audio file.';}sync();elapsed=1;}
+ async function selectTrack(track){audio.pause();if(localUrl){URL.revokeObjectURL(localUrl);localUrl=null;}url=track.url;audio.src=url;title=track.title;error='';sync();elapsed=1;await start();}
+ play.onclick=async()=>{if(audio.paused)await start();else {audio.pause();sync();elapsed=1;}};
+ file.onchange=()=>{const selected=file.files[0];if(!selected)return;audio.pause();if(localUrl)URL.revokeObjectURL(localUrl);localUrl=URL.createObjectURL(selected);url=localUrl;audio.src=url;title=selected.name.replace(/\.[^.]+$/,'');error='';sync();elapsed=1;};
  audio.addEventListener('error',()=>{error='This audio format could not be played.';sync();elapsed=1;});
  for(const event of ['play','pause','ended','loadedmetadata'])audio.addEventListener(event,()=>{sync();elapsed=1;});
  function time(seconds){if(!Number.isFinite(seconds))return '0:00';return Math.floor(seconds/60)+':'+String(Math.floor(seconds%60)).padStart(2,'0');}
