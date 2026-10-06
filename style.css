@@ -19,7 +19,3 @@
 
 #take-item{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom))}
 
-#speaker-player{position:fixed;z-index:30;right:max(18px,env(safe-area-inset-right));top:max(90px,env(safe-area-inset-top));width:min(300px,85vw);padding:20px;background:#071c30f5;border:1px solid #4ba5ff66;border-radius:18px;color:#fff;box-shadow:0 15px 45px #0007}
-#speaker-player[hidden]{display:none}#speaker-close{float:right;padding:0 8px;font-size:22px}#speaker-track{overflow-wrap:anywhere;font-size:14px;color:#bcdbf2;margin:16px 0}#speaker-player button{font-size:13px;padding:10px 14px}#speaker-play{margin-left:8px}
-
-#speaker-tracks{display:grid;gap:8px;margin-bottom:16px}#speaker-tracks button{text-align:left;width:100%;border:1px solid #4ba5ff66}#speaker-pickup{display:block;margin-top:12px}

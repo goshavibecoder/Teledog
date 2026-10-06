@@ -5,41 +5,53 @@ export const SPEAKER_TRACKS=[
  {title:'Эх ВПНы Верные',url:'./assets/faithful-vpns.mp3'}
 ];
 
+export function speakerActionAt(uv){
+ const x=uv.x*640,y=(1-uv.y)*320;
+ if(y<180)return 'toggle';
+ if(y<250)return x<213?'previous':x<427?'toggle':'next';
+ return x<160?'quieter':x<320?'louder':'pickup';
+}
+
 export function createSpeakerPlayer(speaker,{onPickup=()=>{}}={}){
  const display=speaker.getObjectByName('Speaker mini screen');
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=320;
  const context=canvas.getContext('2d');const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  display.material.map=texture;display.material.color.set(0xffffff);display.material.needsUpdate=true;
- const audio=new Audio();audio.preload='metadata';let audioContext,analyser,data,url,localUrl,title='Choose a song',error='',elapsed=1;
- const panel=document.querySelector('#speaker-player'),file=document.querySelector('#speaker-file'),play=document.querySelector('#speaker-play'),status=document.querySelector('#speaker-track');
- const show=()=>{panel.hidden=false;};
- const list=document.querySelector('#speaker-tracks');
- for(const track of SPEAKER_TRACKS){const button=document.createElement('button');button.textContent=track.title;button.onclick=()=>selectTrack(track);list.append(button);}
- document.querySelector('#speaker-pickup').onclick=()=>{panel.hidden=true;onPickup();};
- document.querySelector('#speaker-close').onclick=()=>{panel.hidden=true;};
- document.querySelector('#speaker-select').onclick=()=>file.click();
- function sync(){play.textContent=audio.paused?'Play':'Pause';play.disabled=!url;status.textContent=error||title;}
+ const audio=new Audio();audio.preload='metadata';let audioContext,analyser,data,index=0,error='',elapsed=1;
+ audio.src=SPEAKER_TRACKS[index].url;
  function initialiseAudio(){
   if(audioContext)return;
   audioContext=new (window.AudioContext||window.webkitAudioContext)();analyser=audioContext.createAnalyser();analyser.fftSize=128;data=new Uint8Array(analyser.frequencyBinCount);
-  const source=audioContext.createMediaElementSource(audio);source.connect(analyser);analyser.connect(audioContext.destination);
+  const source=audioContext.createMediaElementSource(audio);source.connect(analyser);
+  gain=audioContext.createGain();gain.gain.value=volume;analyser.connect(gain);gain.connect(audioContext.destination);
  }
- async function start(){try{initialiseAudio();const resume=audioContext.resume();const playback=audio.play();await Promise.all([resume,playback]);error='';}catch(e){error='Unable to play this audio file.';}sync();elapsed=1;}
- async function selectTrack(track){audio.pause();if(localUrl){URL.revokeObjectURL(localUrl);localUrl=null;}url=track.url;audio.src=url;title=track.title;error='';sync();elapsed=1;await start();}
- play.onclick=async()=>{if(audio.paused)await start();else {audio.pause();sync();elapsed=1;}};
- file.onchange=()=>{const selected=file.files[0];if(!selected)return;audio.pause();if(localUrl)URL.revokeObjectURL(localUrl);localUrl=URL.createObjectURL(selected);url=localUrl;audio.src=url;title=selected.name.replace(/\.[^.]+$/,'');error='';sync();elapsed=1;};
- audio.addEventListener('error',()=>{error='This audio format could not be played.';sync();elapsed=1;});
- for(const event of ['play','pause','ended','loadedmetadata'])audio.addEventListener(event,()=>{sync();elapsed=1;});
+ // A GainNode works on iPad, where media-element volume can be fixed by Safari.
+ let gain,volume=.7;audio.volume=1;
+ async function start(){try{initialiseAudio();const resume=audioContext.resume(),playback=audio.play();await Promise.all([resume,playback]);error='';}catch(e){error='Tap Play to retry';}elapsed=1;}
+ async function select(offset){audio.pause();index=(index+offset+SPEAKER_TRACKS.length)%SPEAKER_TRACKS.length;audio.src=SPEAKER_TRACKS[index].url;error='';elapsed=1;await start();}
+ async function act(action){
+  if(action==='pickup'){onPickup();return;}
+  if(action==='next'||action==='previous'){await select(action==='next'?1:-1);return;}
+  if(action==='louder'||action==='quieter'){volume=Math.max(0,Math.min(1,Math.round((volume+(action==='louder'?.1:-.1))*10)/10));if(gain)gain.gain.value=volume;elapsed=1;return;}
+  if(audio.paused)await start();else {audio.pause();elapsed=1;}
+ }
+ audio.addEventListener('error',()=>{error='Audio unavailable';elapsed=1;});
+ for(const event of ['play','pause','loadedmetadata'])audio.addEventListener(event,()=>{elapsed=1;});
+ audio.addEventListener('ended',()=>select(1));
  function time(seconds){if(!Number.isFinite(seconds))return '0:00';return Math.floor(seconds/60)+':'+String(Math.floor(seconds%60)).padStart(2,'0');}
  function update(dt){
   elapsed+=dt;if(elapsed<.08)return;elapsed=0;
   const active=!audio.paused&&!audio.ended;if(analyser)analyser.getByteFrequencyData(data);
   context.fillStyle='#071727';context.fillRect(0,0,640,320);
-  context.fillStyle='#78cfff';context.font='bold 26px Arial';context.fillText(active?'▶ NOW PLAYING':url?'Ⅱ PAUSED':'TELEDOG MUSIC',26,40);
-  context.fillStyle='#ffffff';context.font='bold 29px Arial';const name=title.length>31?title.slice(0,30)+'…':title;context.fillText(name,26,84);
-  for(let i=0;i<24;i++){const amplitude=active&&data?data[1+i*2]/255:0;const height=5+amplitude*105;context.fillStyle=i<12?'#479fff':'#6bdfff';context.fillRect(27+i*24,218-height,14,height);}
-  context.fillStyle='#23435f';context.fillRect(26,248,588,5);context.fillStyle='#72d5ff';const ratio=Number.isFinite(audio.duration)&&audio.duration>0?audio.currentTime/audio.duration:0;context.fillRect(26,248,588*ratio,5);
-  context.font='24px Arial';context.fillStyle='#bbd9f0';context.fillText(time(audio.currentTime),26,291);context.textAlign='right';context.fillText(time(audio.duration),614,291);context.textAlign='left';texture.needsUpdate=true;
+  context.fillStyle='#78cfff';context.font='bold 22px Arial';context.fillText(error||'TELEDOG MUSIC',20,27);
+  context.fillStyle='#ffffff';context.font='bold 28px Arial';context.fillText(SPEAKER_TRACKS[index].title,20,62);
+  for(let i=0;i<24;i++){const amplitude=active&&data?data[1+i*2]/255:0,height=4+amplitude*57;context.fillStyle='#6bdfff';context.fillRect(27+i*24,134-height,14,height);}
+  context.fillStyle='#23435f';context.fillRect(26,148,588,4);context.fillStyle='#72d5ff';const ratio=Number.isFinite(audio.duration)&&audio.duration>0?audio.currentTime/audio.duration:0;context.fillRect(26,148,588*ratio,4);
+  context.font='20px Arial';context.fillStyle='#bbd9f0';context.fillText(time(audio.currentTime)+' / '+time(audio.duration),26,176);
+  function button(x,y,w,h,label){context.fillStyle='#163b5c';context.fillRect(x+4,y+4,w-8,h-8);context.fillStyle='#ffffff';context.font='bold 28px Arial';context.textAlign='center';context.fillText(label,x+w/2,y+h/2+10);context.textAlign='left';}
+  button(0,180,213,70,'◀◀');button(213,180,214,70,active?'Ⅱ':'▶');button(427,180,213,70,'▶▶');
+  button(0,250,160,70,'−');button(160,250,160,70,'+');button(320,250,320,70,'HOLD · '+Math.round(volume*100)+'%');
+  texture.needsUpdate=true;
  }
- sync();update(1);return {show,update};
+ update(1);return {act,update};
 }

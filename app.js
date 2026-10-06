@@ -4,10 +4,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {logoLink,movement,slideMove} from './navigation.js';
 import {addXLogo} from './x-logo.js';
-import {addSpeaker} from './speaker.js?v=tracks11';
-import {createSpeakerPlayer} from './speaker-player.js?v=tracks11';
-import {fixRoomVisuals} from './visual-fixes.js?v=tracks11';
-import {registerItems,HandInteraction} from './interactions.js?v=tracks11';
+import {addSpeaker} from './speaker.js?v=direct12';
+import {createSpeakerPlayer,speakerActionAt} from './speaker-player.js?v=direct12';
+import {fixRoomVisuals} from './visual-fixes.js?v=direct12';
+import {registerItems,HandInteraction} from './interactions.js?v=direct12';
 const $=s=>document.querySelector(s),host=$('#scene'),enter=$('#enter'),progress=$('#progress'),status=$('#load-status');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
@@ -54,20 +54,21 @@ $('#mode-switch').onclick=()=>walk?overview():setWalk();
 $('#put-back').onclick=()=>hands.release();
 function targetAt(x,y){
  if(!room)return null;pointer.set(x/innerWidth*2-1,-y/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);
- const hits=raycaster.intersectObject(room,true);
- if(hands.held)hits.push(...raycaster.intersectObject(hands.rig,true));hits.sort((a,b)=>a.distance-b.distance);
+ const hits=hands.held?raycaster.intersectObject(hands.rig,true):[];
+ if(!hits.length)hits.push(...raycaster.intersectObject(room,true));
  for(const hit of hits){
   const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];
   if(mats.every(m=>m?.transparent&&m.opacity<.4))continue;
-  if(hit.object.userData.speakerScreen)return {speakerPlayer:true};
-  let o=hit.object;while(o){if(o.name==='TELEDOG speaker')return {speakerPlayer:true};const url=logoLink(o.name);if(url)return {url};o=o.parent;}
+  if(hit.object.userData.speakerScreen)return {speakerAction:speakerActionAt(hit.uv)};
+  if(hit.object.userData.speakerAction)return {speakerAction:hit.object.userData.speakerAction};
+  let o=hit.object;while(o){if(o.name==='TELEDOG speaker')return {speakerAction:'toggle'};const url=logoLink(o.name);if(url)return {url};o=o.parent;}
   break;
  }
  const item=walk?hands.itemAt(hits):null;return item?{item}:null;
 }
 renderer.domElement.addEventListener('pointerdown',e=>{pendingPointer={target:walk?targetAt(e.clientX,e.clientY):null,id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};if(walk)renderer.domElement.setPointerCapture(e.pointerId);});
 renderer.domElement.addEventListener('pointermove',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId){const p=pendingPointer;if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>14)p.moved=true;if(walk){yaw-=(e.clientX-p.lastX)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-p.lastY)*.004,-1.12,1.12);camera.rotation.set(pitch,yaw,0,'YXZ');}p.lastX=e.clientX;p.lastY=e.clientY;}else if(e.pointerType==='mouse'){renderer.domElement.style.cursor=targetAt(e.clientX,e.clientY)?'pointer':walk?'grab':'default';}});
-renderer.domElement.addEventListener('pointerup',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId&&!pendingPointer.moved){const target=pendingPointer.target||targetAt(e.clientX,e.clientY);if(target?.speakerPlayer)speakerPlayer.show();else if(target?.url)window.open(target.url,'_blank','noopener,noreferrer');else if(target?.item)hands.take(target.item);}pendingPointer=null;});renderer.domElement.addEventListener('pointercancel',()=>pendingPointer=null);
+renderer.domElement.addEventListener('pointerup',e=>{if(pendingPointer&&pendingPointer.id===e.pointerId&&!pendingPointer.moved){const target=pendingPointer.target||targetAt(e.clientX,e.clientY);if(target?.speakerAction)speakerPlayer.act(target.speakerAction);else if(target?.url)window.open(target.url,'_blank','noopener,noreferrer');else if(target?.item)hands.take(target.item);}pendingPointer=null;});renderer.domElement.addEventListener('pointercancel',()=>pendingPointer=null);
 const joy=$('#joystick'),stick=$('#stick');let joyId=null;
 function updateStick(e){const b=joy.getBoundingClientRect(),dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2,length=Math.max(1,Math.hypot(dx,dy)/35),x=dx/length,y=dy/length;stick.style.transform=`translate(${x}px,${y}px)`;stickVector={forward:-y/35,right:x/35};}
 joy.addEventListener('pointerdown',e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);updateStick(e);});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)updateStick(e);});function resetStick(){joyId=null;stickVector={forward:0,right:0};stick.style.transform='';}joy.addEventListener('pointerup',resetStick);joy.addEventListener('pointercancel',resetStick);
