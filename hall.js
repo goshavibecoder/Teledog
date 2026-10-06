@@ -7,7 +7,9 @@ export async function addHall(room){
  const buffer=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
  const gltf=await new GLTFLoader().parseAsync(buffer,'./assets/');
  const hall=gltf.scene;hall.name='TELEDOG statue gallery';hall.userData.gallery=true;
- hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
+ hall.traverse(o=>{if(o.isMesh){o.userData.gallery=true;if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallFloor'){o.material.roughness=.48;o.material.metalness=.15;o.material.side=THREE.FrontSide;}if((o.userData.name||o.name).replaceAll('_',' ')==='Hall HallBase'){
+  const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++)if(Math.abs(positions.getY(i)-.24)<1e-6)positions.setY(i,.2415);positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
+ }if(o.material.transparent){o.material.depthWrite=false;o.renderOrder=2;}}});
  room.add(hall);
  // The original floor ends at the open right side; bridge it to the doorway.
  const floor=hall.getObjectByName('Hall_HallFloor');
